@@ -1,0 +1,104 @@
+﻿@page "/diary/edit/{DiaryId:int}"
+@page "/diary/create"
+
+@inject DiaryInterface diaryInterface
+@inject NavigationManager Navigation
+@inject IJSRuntime Runtime
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.StudentRole)]
+
+<div class="div-form mt-3 mb-3">
+    <h2>@Title Dzienniczka:</h2>
+
+    <EditForm Model="DiaryData" OnValidSubmit="AddNewEditDiary">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Tytuł:</label>
+                    <InputText placeholder="Tytuł" @bind-Value="DiaryData.title" />
+                    <ValidationMessage For="()=>DiaryData.title"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputNumber @bind-Value="DiaryData.StudentId" hidden />
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Data:</label>
+                    <InputDate placeholder="Data" id="dataDiary" @bind-Value="@DiaryData.Date" />
+                    <ValidationMessage For="()=>DiaryData.Date"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="d-block">Streszczenie:</label>
+            <InputTextArea rows="4" style="min-width:100%" @bind-Value="DiaryData.summary" />
+        </div>
+        <div class="form-group">
+            <label class="d-block">Opis:</label>
+            <InputTextArea rows="4" style="min-width:100%" @bind-Value="DiaryData.description" />
+        </div>
+        <div class="form-group">
+            <label class="d-block">Podsumowanie:</label>
+            <InputTextArea rows="4" style="min-width:100%" @bind-Value="DiaryData.conclustion" />
+        </div>
+        <label class="buttons">
+            <button type="submit" class="btn-submit btn">Zapisz</button>
+            <a href="/diary" class="btn btn-dark">Wyjdź</a>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+    public int LogedStudent { get; set; }
+
+    [Parameter]
+    public int? diaryId { get; set; }
+
+    private DiaryDTO DiaryData { get; set; } = new DiaryDTO();
+
+    private string Title { get; set; } = "Tworzenie";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData);
+            LogedStudent = data.StudentId;
+        }
+
+        if (diaryId == null)
+        {
+            DiaryData = new DiaryDTO();
+            DiaryData.StudentId = LogedStudent;
+        }
+        else
+        {
+            Title = "Aktualizowanie";
+            DiaryData = await diaryInterface.GetDiary(diaryId.Value);
+        }
+    }
+    private async Task AddNewEditDiary()
+    {
+        try
+        {
+            if (DiaryData.DiaryId != 0 && Title == "Aktualizowanie")
+            {
+                var updateData = await diaryInterface.UpdateDiary(diaryId.Value, DiaryData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Pomyślnie zaktualizowano!");
+            }
+            else
+            {
+                var createData = await diaryInterface.CreateDiary(DiaryData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Pomyślnie utworzono!.");
+            }
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        Navigation.NavigateTo("/diary");
+    }
+}

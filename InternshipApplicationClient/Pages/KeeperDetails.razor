@@ -1,0 +1,116 @@
+﻿@page  "/keeper/details/{KeeperId:int}"
+
+@inject KeeperInterface keeperInterface
+@inject CompanyInterface companinterface
+@inject KeeperAvatarInterface keeperAvatarInterface
+@inject IJSRuntime Runtime
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Student,Keeper,Company")]
+
+<div class="data m-auto pt-5">
+    <div class="row">
+        <div class="col mt-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column align-items-center text-center">
+                        @if (avatarDTO != null)
+                        {
+                            <img src="@avatarDTO.URL">
+                        }
+                        else
+                        {
+                            <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png">
+                        }
+                        <span class="font-weight-bold mt-2">@keeperData.email</span>
+                        <div class="mt-2">
+                            <a class="btn btn-outline-primary" href=@($"/email/keeper/{keeperData.KeeperId}")>Email</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col mt-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h5> Tytuł naukowy:</h5>
+                        </div>
+                        <div class="col">
+                            @keeperData.degree
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Imię i Nazwisko:</h5>
+                        </div>
+                        <div class="col">
+                            @keeperData.name @keeperData.lastName
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Nr.Telefonu:</h5>
+                        </div>
+                        <div class="col">
+                            @keeperData.telephone
+                        </div>
+                    </div>
+                    @if (company != null)
+                    {
+                        <div class="row">
+                            <div class="col">
+                                <h5> Firma:</h5>
+                            </div>
+                            <div class="col">
+                                @company.name
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col">
+                                <h5> Uczelnia:</h5>
+                            </div>
+                            <div class="col">
+                                Politechnika Bydgoska
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="card ml-3 mr-3 p-4">
+            <div class="row">
+                <div class="col">
+                    <h4>Osiągnięcia</h4>
+                </div>
+                <div class="col">
+                    @keeperData.description
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public int? KeeperId { get; set; }
+
+    private KeeperDTO keeperData { get; set; } = new KeeperDTO();
+
+    private KeeperAvatarsDTO avatarDTO { get; set; } = new KeeperAvatarsDTO();
+
+    public CompanyDTO company = new CompanyDTO();
+
+    protected async override Task OnInitializedAsync()
+    {
+        keeperData = await keeperInterface.GetKeeper(KeeperId.Value);
+        avatarDTO = await keeperAvatarInterface.GetKeeperAvatar(KeeperId.Value);
+        company = await companinterface.GetCompany(keeperData.CompanyId.Value);
+    }
+}

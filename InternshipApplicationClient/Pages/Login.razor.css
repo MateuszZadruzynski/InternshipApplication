@@ -1,0 +1,24 @@
+﻿.box{
+    top:50%;
+    bottom:50%;
+    left:50%;
+    right: 50%;
+}
+
+a {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+button {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.btn-submit {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}

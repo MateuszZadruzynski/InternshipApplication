@@ -1,0 +1,121 @@
+﻿@page "/diary"
+
+@using Administration.Interface;
+@using Models
+@inject DiaryInterface DiaryInterface
+@inject StudentInterface StudentInterface
+@attribute [Authorize(Roles = Utils.AuthenticationData.AdminRole)]
+@inject IJSRuntime Runtime
+@inject NavigationManager manger
+
+<div class="filtr">
+    <div class="row">
+        <div class="find">
+            <input class="search" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj..." />
+        </div>
+        <div class="add  ml-auto">
+            <NavLink class="btn btn-secondary" href="/companies/create">
+                <span class="oi oi-plus"></span> Dodaj
+            </NavLink>
+        </div>
+    </div>
+</div>
+@if (diaryData.Any())
+{
+    @foreach (var eachDiary in diaryData.Where(x => IsVisible(x)))
+    {
+        <br />
+        <div class="data table-responsive">
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <th>Tytuł:</th>
+                        <th>Date:</th>
+                        <th>Student:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            @eachDiary.title
+                        </td>
+                        <td>
+                            @eachDiary.Date
+                        </td>
+                        <td>
+                            @eachDiary.Student?.name @eachDiary?.Student?.lastName
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="desc bg-dark">
+                <label class="d-block">Streszczenie:</label>
+                @eachDiary.summary
+                <label class="d-block">Opis:</label>
+                @eachDiary.description
+                <label class="d-block">Podsumowanie:</label>
+                @eachDiary.conclustion
+            <div class="buttons">
+                <NavLink href="@($"/diary/edit/{eachDiary.DiaryId}")" class="btn btn-success">Edytuj</NavLink>
+                <NavLink class="btn btn-danger" @onclick="() => DeleteDiary(eachDiary.DiaryId)">Usuń</NavLink>
+            </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <NoDataFound></NoDataFound>
+}
+
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code{
+    private IEnumerable<DiaryDTO> diaryData { get; set; } = new List<DiaryDTO>();
+
+    private int? DeleteDiaryId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    public string Filter { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        diaryData = await DiaryInterface.GetAllDiaries();
+    }
+    private async Task DeleteDiary(int DiaryId)
+    {
+        DeleteDiaryId = DiaryId;
+        await Runtime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public bool IsVisible(DiaryDTO eachDiary)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (eachDiary.Student.name.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachDiary.Student.lastName.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachDiary.Date.ToString().StartsWith(Filter))
+            return true;
+
+        return false;
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteDiaryId != null)
+        {
+            await DiaryInterface.DeleteDiary(DeleteDiaryId.Value);
+            diaryData = await DiaryInterface.GetAllDiaries();
+        }
+        await Runtime.InvokeVoidAsync("HideDialog");
+        Started = false;
+        manger.NavigateTo("/diary", true);
+    }
+}

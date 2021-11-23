@@ -1,0 +1,26 @@
+<Router AppAssembly="@typeof(Program).Assembly" PreferExactMatches="@true">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+            <Authorizing>
+                <div style="background-color: #ebebeb; margin:auto; height:100%; text-align:center">
+                    <div style="text-align: center; width: 100%; top: 30%; background-color: #ebebeb;">
+                        <h1>Proszê czekaæ :)</h1>
+                        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+                        </div>
+                        <p>Autoryzacja trwa...</p>
+                    </div>
+                </div>
+            </Authorizing>
+            <NotAuthorized>
+                <AuthFailed></AuthFailed>
+            </NotAuthorized>
+        </AuthorizeRouteView>
+    </Found>
+    <NotFound>
+        <CascadingAuthenticationState>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <NoDataFound></NoDataFound>
+            </LayoutView>
+        </CascadingAuthenticationState>
+    </NotFound>
+</Router>

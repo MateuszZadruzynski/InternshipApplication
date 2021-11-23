@@ -1,0 +1,194 @@
+﻿@page "/keeper/profile"
+
+@inject KeeperInterface keeperInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+@inject CompanyInterface companyInterface
+@inject KeeperAvatarInterface keeperAvatarInterface
+@inject UploadInterface uploadInterface
+@using System.IO
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.KeeperRole)]
+
+<div class="div-acc pt-5">
+    <h2>Twój profil:</h2>
+    <EditForm Model="KeeperData" OnValidSubmit="EditStudent">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col mt-5">
+                <div class="d-flex flex-column align-items-center text-center">
+                    @if (Avatar != null)
+                    {
+                        <img src="@Avatar.URL">
+                    }
+                    else
+                    {
+                        <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png">
+                    }
+                    <ImageUpload OnChange="AssignImageUrl" />
+                    <span class="font-weight-bold">@KeeperData.email</span>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="row d-flex flex-column align-items-center">
+                    <div class="col-sm pb-1">
+                        <div class="form-group">
+                            <label class="d-block">Degree:</label>
+                            <InputSelect @bind-Value="KeeperData.degree">
+                                @foreach (var degree in Enum.GetValues(typeof(Models.degree)))
+                                {
+                                    <option value="@degree">@degree</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="()=>KeeperData.degree"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">First Name:</label>
+                            <InputText placeholder="Name" @bind-Value="KeeperData.name" />
+                            <ValidationMessage For="()=>KeeperData.name"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Last Name:</label>
+                            <InputText placeholder="Last Name" @bind-Value="KeeperData.lastName" />
+                            <ValidationMessage For="()=>KeeperData.lastName"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row d-flex flex-column align-items-center">
+                    <div class="col-sm">
+                        <div class="form-group">
+                            <label class="d-block">Firma:</label>
+                            <InputSelect @bind-Value="KeeperData.CompanyId">
+                                <option value="">Nie dotyczy</option>
+                                @foreach (var company in companies)
+                                {
+                                    <option value="@company.CompanyId">@company.name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Telephone:</label>
+                            <InputText placeholder="+48123456123" @bind-Value="KeeperData.telephone" />
+                            <ValidationMessage For="()=>KeeperData.telephone"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <InputText placeholder="E-mail" hidden @bind-Value="KeeperData.email" />
+                            <ValidationMessage For="()=>KeeperData.email"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Password:</label>
+                            <InputText type="password" placeholder="2s@sd!90z" @bind-Value="KeeperData.Password" />
+                            <ValidationMessage For="()=>KeeperData.Password"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Confirm Password:</label>
+                            <InputText type="password" placeholder="2s@sd!90z" @bind-Value="KeeperData.ConfirmPassword" />
+                            <ValidationMessage For="()=>KeeperData.ConfirmPassword"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <label class="d-block">Osiągnięcia:</label>
+        <div class="d-flex flex-row-reverse">
+            <InputTextArea rows="4" style="min-width:100%" @bind-Value="KeeperData.description" />
+        </div>
+        <div class="d-flex flex-row-reverse button">
+            <button type="submit" class="btn-submit btn m-1">Aktualizuj</button>
+            <a href="/keeper/profile" class="btn btn-dark m-1">Wyjdź</a>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? keeperId { get; set; }
+
+    string imageURL { get; set; }
+
+    string url { get; set; }
+
+    string name { get; set; }
+
+    private KeeperDTO KeeperData { get; set; } = new KeeperDTO();
+
+    private KeeperAvatarsDTO Avatar { get; set; } = new KeeperAvatarsDTO();
+
+    private IEnumerable<CompanyDTO> companies { get; set; } = new List<CompanyDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData);
+            keeperId = data.KeeperId;
+        }
+        KeeperData = await keeperInterface.GetKeeper(keeperId.Value);
+        Avatar = await keeperAvatarInterface.GetKeeperAvatar(keeperId.Value);
+        companies = await companyInterface.GetCompanies();
+    }
+
+
+    private async Task EditStudent()
+    {
+        try
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano pomyślnie!");
+            await keeperInterface.UpdateKeeper(KeeperData.KeeperId, KeeperData);
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        navigationManager.NavigateTo("/keeper/profile");
+    }
+
+    private async Task AssignImageUrl(string imgUrl)
+    {
+        var keeperData = await keeperAvatarInterface.GetKeeperAvatar(keeperId.Value);
+
+        if (keeperData != null)
+        {
+            if (Avatar != null)
+            {
+                string name = Path.GetFileName(new Uri(keeperData.URL).AbsolutePath);
+                await uploadInterface.DeleteImage(name);
+                await keeperAvatarInterface.DeleteKeeperAvatarByKeeperId(keeperData.KeeperId);
+
+                var data = new KeeperAvatarsDTO()
+                {
+                    KeeperId = keeperId.Value,
+                    URL = imgUrl
+                };
+
+                if (data != null)
+                {
+                    await keeperAvatarInterface.CreateKeeperAvatar(data);
+                }
+
+            }
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Avatar został dodany pomyślnie.");
+            navigationManager.NavigateTo("/keeper/profile", true);
+        }
+        else
+        {
+            var data = new KeeperAvatarsDTO()
+            {
+                KeeperId = keeperId.Value,
+                URL = imgUrl
+            };
+
+            if (data != null)
+            {
+                await keeperAvatarInterface.CreateKeeperAvatar(data);
+            }
+        }
+        await Runtime.InvokeVoidAsync("ToastShow", "success", "Avatar został dodany pomyślnie.");
+        navigationManager.NavigateTo("/keeper/profile", true);
+    }
+}

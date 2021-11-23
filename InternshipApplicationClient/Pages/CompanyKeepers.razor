@@ -1,0 +1,113 @@
+﻿@page "/company/keepers"
+
+@inject KeeperInterface keeperInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime Runtime
+@inject NavigationManager manger
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.CompanyRole)]
+
+@if (keepersList.Any())
+{
+    <div class="data">
+        @foreach (var keeper in keepersList)
+        {
+            <div class="card flex-row mt-3">
+                <div class="col-md col-xs-6  m-auto">
+                    <div class="row">
+                        @if (keeper.KeeperAvatars == null)
+                        {
+                            <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png" />
+                        }
+                        else
+                        {
+                            <img src="@keeper.KeeperAvatars.URL" />
+                        }
+                    </div>
+                </div>
+                <div class="col-md col-xs-6 m-auto">
+                    <h4> @keeper.name @keeper.lastName</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4>@keeper.telephone </h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4> @keeper.email</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto ml-5">
+                    <a href="@($"/keeper/details/{keeper.KeeperId}")" class="text-info ml-5" data-original-title="Info"><div class="oi oi-eye"></div></a>
+                    <a class="text-danger ml-5" data-original-title="Info" @onclick="() => DeleteKeeper(keeper.KeeperId)"><div class="oi oi-trash"></div></a>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center mt-5 mb-5 ml-5 mr-5" role="contentinfo" style="margin-top:30px;">
+        <h4 class="info-heading"><i class="oi oi-pencil"></i>Brak pracowników.</h4>
+        <p>Twoja firma nie posiada przypisanych pracowników.</p>
+        <hr>
+        <p class="mb-0">Proszę skontaktować się z pracownikiem.</p>
+        <p>Jeśli problem pozostaje nie rozwiązany, proszę zgłosić się do administracji.</p>
+    </div>
+}
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code {
+    [Parameter]
+    public int? companyId { get; set; }
+
+    public string keeperEmail { get; set; }
+
+    private KeeperDTO KeeperData { get; set; } = new KeeperDTO();
+
+    private IEnumerable<KeeperDTO> companyKeepers { get; set; } = new List<KeeperDTO>();
+
+    private KeeperDTO keeperData { get; set; } = new KeeperDTO();
+
+    private List<KeeperDTO> keepersList { get; set; } = new List<KeeperDTO>();
+
+    private int? DeleteKeeperId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<CompanyDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<CompanyDTO>(AuthenticationData.UserData);
+            companyId = data.CompanyId;
+        }
+        companyKeepers = await keeperInterface.GetAllCompanyKeepers(companyId.Value);
+
+        if (companyKeepers != null)
+        {
+            foreach (var keeper in companyKeepers)
+            {
+                var id = keeper.KeeperId;
+                keeperData = await keeperInterface.GetKeeper(id);
+                keepersList.Add(keeperData);
+            }
+        }
+    }
+
+    private async Task DeleteKeeper(int KeeperId)
+    {
+        DeleteKeeperId = KeeperId;
+        await Runtime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteKeeperId != null)
+        {
+            await keeperInterface.DeleteKeeper(DeleteKeeperId.Value);
+            manger.NavigateTo("/company/keepers", true);
+        }
+        await Runtime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+
+}

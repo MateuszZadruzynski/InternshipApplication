@@ -1,0 +1,127 @@
+﻿@page "/internship/create"
+@page "/internship/edit/{internshipId:int}"
+
+@using Administration.Interface;
+@using Models
+@inject InternshipInterface InternshipInterface
+@inject CompanyInterface CompanyInterface
+@inject NavigationManager Navigation
+@inject IJSRuntime Runtime
+    
+<div class="div-form">
+    <h2>@Title praktykę:</h2>
+
+    <EditForm Model="InternshipData" OnValidSubmit="AddNewEditInternship">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Stanowsiko praktyki:</label>
+                    <InputText placeholder="IT-Tech" @bind-Value="InternshipData.worksite" />
+                    <ValidationMessage For="()=>InternshipData.worksite"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czas pracy:</label>
+                    <InputText placeholder="8:00-16:00" @bind-Value="InternshipData.workTime" />
+                    <ValidationMessage For="()=>InternshipData.workTime"></ValidationMessage>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Pensja:</label>
+                    <InputNumber placeholder="1000" @bind-Value="InternshipData.salary" />
+                    <ValidationMessage For="()=>InternshipData.salary"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Miesiąc praktyki:</label>
+                    <InputSelect @bind-Value="InternshipData.month">
+                        @foreach (var month in Enum.GetValues(typeof(month)))
+                        {
+                            <option value="@month">@month</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="()=>InternshipData.month"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Firma:</label>
+                    <InputSelect @bind-Value="InternshipData.CompanyId">
+                        @foreach (var company in companies)
+                        {
+                            <option value="@company.CompanyId">@company.name</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="d-block">Twoje zadania:</label>
+            <InputTextArea placeholder="Here you can describe what student need to do" rows="4" style="min-width:100%" @bind-Value="InternshipData.tasks" />
+        </div>
+        <div class="form-group">
+            <label class="d-block">Opis praktyki:</label>
+            <InputTextArea placeholder="Here you can describe your internship" rows="4" style="min-width:100%" @bind-Value="InternshipData.description" />
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">@Title praktyki</button>
+            <NavLink href="/internship" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? internshipId { get; set; }
+
+    private InternshipDTO InternshipData { get; set; } = new InternshipDTO();
+
+    private IEnumerable<CompanyDTO> companies { get; set; } = new List<CompanyDTO>();
+
+    private string CompanyId { get; set;  }
+
+    private string Title { get; set; } = "Utwórz";
+
+    [CascadingParameter]
+    public Task<AuthenticationState> Authentication { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        companies = (await CompanyInterface.GetAllCompanies()).ToList();
+        var state = await Authentication;
+        if (!state.User.IsInRole(Utils.AuthenticationData.AdminRole))
+        {
+            var uri = new Uri(Navigation.Uri);
+            Navigation.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}");
+        }
+
+        if (internshipId == null)
+        {
+            InternshipData = new InternshipDTO();
+        }
+        else
+        {
+            Title = "Edytuj";
+            InternshipData = await InternshipInterface.GetInternship(internshipId.Value);
+        }
+    }
+    private async Task AddNewEditInternship()
+    {
+        try
+        {
+            if (InternshipData.InternshipID != 0 && Title == "Edytuj")
+            {
+                var updateData = await InternshipInterface.UpdateInternship(InternshipData.InternshipID, InternshipData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Oferta zostala zaktualizowana pomyślnie.");
+            }
+            else
+            {
+                var createData = await InternshipInterface.CreateInternship(InternshipData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Utworzono opinie studenta.");
+            }
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        Navigation.NavigateTo("/internship");
+    }
+}

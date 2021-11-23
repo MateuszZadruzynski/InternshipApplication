@@ -1,0 +1,83 @@
+﻿@page "/keepers"
+
+@inject KeeperInterface keeperInterface
+@inject StudentKeeperInterface studentKeeperInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager manger
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.StudentRole)]
+
+<div class="data">
+    @if (keepersList.Any())
+    {
+        @foreach (var keeper in keepersList)
+        {
+            <div class="card flex-row mt-3">
+                <div class="col-md col-xs-6  m-auto">
+                    <div class="row">
+                        @if (keeper.KeeperAvatars == null)
+                        {
+                            <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png" />
+                        }
+                        else
+                        {
+                            <img src="@keeper.KeeperAvatars.URL" />
+                        }
+                    </div>
+                </div>
+                <div class="col-md col-xs-6 m-auto">
+                    <h4> @keeper.name @keeper.lastName</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4>Nr. @keeper.telephone </h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4> @keeper.email</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto ml-5">
+                    <a href="@($"/keeper/details/{keeper.KeeperId}")" class="text-info ml-5" title="" data-original-title="Info"><div class="oi oi-eye"></div></a>
+                </div>
+            </div>
+        }
+
+    }
+    else
+    {
+        <NoDataFound></NoDataFound>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int? studentId { get; set; }
+
+    private IEnumerable<StudentKeeperDTO> keeperKeeper { get; set; } = new List<StudentKeeperDTO>();
+
+    private KeeperDTO keeperData { get; set; } = new KeeperDTO();
+
+    private List<KeeperDTO> keepersList { get; set; } = new List<KeeperDTO>();
+
+
+    private bool Started { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData);
+            studentId = data.StudentId;
+        }
+        keeperKeeper = await studentKeeperInterface.GetAllKeeperIdByStudentId(studentId.Value);
+
+        if (keeperKeeper != null)
+        {
+            foreach (var keeper in keeperKeeper)
+            {
+                var id = keeper.KeeperId;
+                keeperData = await keeperInterface.GetKeeper(id);
+                keepersList.Add(keeperData);
+            }
+        }
+    }
+}

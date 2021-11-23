@@ -1,0 +1,186 @@
+﻿@page "/student/profile"
+
+@inject StudentInterface studentInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject StudentAvatarInterface studentAvatarInterface
+@inject UploadInterface uploadInterface
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+@using System.IO
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.StudentRole)]
+<div class="div-form mt-3">
+    <h2>Twój profil:</h2>
+    <EditForm Model="StudentData" OnValidSubmit="EditStudent">
+        <DataAnnotationsValidator />
+        <div class="row add">
+            <div class="col ml-4 mr-4 mt-4">
+                <div class="d-flex flex-column align-items-center text-center">
+                    @if (StudentData.StudentAvatars != null)
+                    {
+                        <img src="@StudentData.StudentAvatars.URL" />
+                    }
+                    else
+                    {
+                        <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png">
+                    }
+                    <ImageUpload OnChange="AssignImageUrl" />
+                    <span class="font-weight-bold">@StudentData.email</span>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col-sm pb-1">
+                        <div class="form-group">
+                            <label class="d-block">Imię</label>
+                            <InputText placeholder="Imię" @bind-Value="StudentData.name" />
+                            <ValidationMessage For="() => StudentData.name"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Nazwisko</label>
+                            <InputText placeholder="Nazwisko" @bind-Value="StudentData.lastName" />
+                            <ValidationMessage For="() => StudentData.lastName"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Indeks</label>
+                            <InputText placeholder="Indeks" @bind-Value="StudentData.index" />
+                            <ValidationMessage For="() => StudentData.index"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Nr.Telefonu</label>
+                            <InputText placeholder="Telefon (123123123)" @bind-Value="StudentData.telephone" />
+                            <ValidationMessage For="() => StudentData.telephone"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Kierunke studiów</label>
+                            <InputText placeholder="Kierunek studiów" @bind-Value="StudentData.major" />
+                            <ValidationMessage For="() => StudentData.major"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Nazwa ulicy</label>
+                            <InputText placeholder="Ul.Ulica" @bind-Value="StudentData.street" />
+                            <ValidationMessage For="() => StudentData.street"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="row">
+                    <div class="col-sm">
+                        <div class="form-group">
+                            <label class="d-block">Numer ulicy</label>
+                            <InputText placeholder="Numer ulicy" @bind-Value="StudentData.streetNumber" />
+                            <ValidationMessage For="() => StudentData.streetNumber"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Number domu</label>
+                            <InputText placeholder="Number domu" @bind-Value="StudentData.homeNumber" />
+                            <ValidationMessage For="() => StudentData.homeNumber"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Miasto</label>
+                            <InputText placeholder="Miasto" @bind-Value="StudentData.city" />
+                            <ValidationMessage For="() => StudentData.city"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Kod pocztowy</label>
+                            <InputText placeholder="Kod pocztowy" @bind-Value="StudentData.postCode" />
+                            <ValidationMessage For="() => StudentData.postCode"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <InputText placeholder="E-mail" @bind-Value="StudentData.email" disabled hidden />
+                            <ValidationMessage For="() => StudentData.email"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Hasło</label>
+                            <InputText type="password" placeholder="Hasło" @bind-Value="StudentData.Password" />
+                            <ValidationMessage For="() => StudentData.Password"></ValidationMessage>
+                        </div>
+                        <div class="form-group">
+                            <label class="d-block">Potwierdź Hasło</label>
+                            <InputText type="password" placeholder="Potwierdź Hasło" @bind-Value="StudentData.ConfirmPassword" />
+                            <ValidationMessage For="() => StudentData.ConfirmPassword"></ValidationMessage>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex flex-row-reverse button">
+            <button type="submit" class="btn-submit btn m-1">Aktualizuj</button>
+            <a href="/student/profile" class="btn btn-dark m-1">Wyjdź</a>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? studentId { get; set; }
+
+    private StudentDTO StudentData { get; set; } = new StudentDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData);
+            studentId = data.StudentId;
+        }
+        StudentData = await studentInterface.GetStudent(studentId.Value);
+    }
+
+    private async Task EditStudent()
+    {
+        try
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano pomyślnie!");
+            await studentInterface.UpdateStudent(StudentData.StudentId, StudentData);
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        navigationManager.NavigateTo("/student/profile");
+    }
+
+    private async Task AssignImageUrl(string imgUrl)
+    {
+
+        var studentData = await studentAvatarInterface.GetStudentAvatar(studentId.Value);
+
+        if (studentData != null)
+        {
+            string name = Path.GetFileName(new Uri(studentData.URL).AbsolutePath);
+            await uploadInterface.DeleteImage(name);
+            await studentAvatarInterface.DeleteStudentAvatarByStudentId(studentData.StudentId);
+            var data = new StudentAvatarsDTO()
+            {
+                StudentId = studentId.Value,
+                URL = imgUrl
+            };
+
+            if (data != null)
+            {
+                await studentAvatarInterface.CreateStudentAvatar(data);
+            }
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Avatar został dodany pomyślnie.");
+            navigationManager.NavigateTo("/student/profile", true);
+
+        }
+        else
+        {
+            var data = new StudentAvatarsDTO()
+            {
+                StudentId = studentId.Value,
+                URL = imgUrl
+            };
+
+            if (data != null)
+            {
+                await studentAvatarInterface.CreateStudentAvatar(data);
+            }
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Avatar został dodany pomyślnie.");
+            navigationManager.NavigateTo("/student/profile", true);
+        }
+    }
+}

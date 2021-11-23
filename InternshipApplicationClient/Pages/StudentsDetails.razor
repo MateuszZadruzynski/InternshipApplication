@@ -1,0 +1,136 @@
+﻿@page  "/student/details/{StudentId:int}"
+
+@inject StudentInterface studentInterface
+@inject DiaryInterface diaryInterface
+@inject IJSRuntime Runtime
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Student,Keeper")]
+
+<div class="data">
+    <div class="row">
+        <div class="col mt-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column align-items-center text-center">
+                        @if (studentData.StudentAvatars != null)
+                        {
+                            <img src="@studentData.StudentAvatars.URL" />
+                        }
+                        else
+                        {
+                            <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png">
+                        }
+                        <span class="font-weight-bold mt-2">@studentData.email</span>
+                        <div class="mt-2">
+                            <a class="btn btn-outline-primary" href=@($"/email/student/{studentData.StudentId}")>Email</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-column align-items-center text-center">
+                        <h5>Dzienniczek studenta:</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col mt-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h5> Imię i Nazwisko:</h5>
+                        </div>
+                        <div class="col">
+                            @studentData.name @studentData.lastName
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Indeks:</h5>
+                        </div>
+                        <div class="col">
+                            @studentData.index
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Nr.Telefonu:</h5>
+                        </div>
+                        <div class="col">
+                            @studentData.telephone
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Address:</h5>
+                        </div>
+                        <div class="col">
+                            @studentData.street @studentData.streetNumber / @studentData.homeNumber
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <h5> Miejscowość:</h5>
+                        </div>
+                        <div class="col">
+                            @studentData.city @studentData.postCode
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @foreach (var diary in diaries)
+            {
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h3>@diary.title</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">@diary.Date</li>
+                                <li class="list-group-item">@diary.summary</li>
+                                <li class="list-group-item">@diary.description</li>
+                                <li class="list-group-item">@diary.conclustion</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public int? StudentId { get; set; }
+
+    public string? emailAdress { get; set; }
+
+    private StudentDTO studentData { get; set; } = new StudentDTO();
+
+    public bool isTrue { get; set; } = false;
+
+    private bool Started { get; set; } = false;
+
+    public IEnumerable<DiaryDTO> diaries = new List<DiaryDTO>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadStudent();
+        await LoadDiaries();
+    }
+
+    private async Task LoadDiaries()
+    {
+        diaries = await diaryInterface.GetDiaries(StudentId.Value);
+    }
+
+    private async Task LoadStudent()
+    {
+        studentData = await studentInterface.GetStudent(StudentId.Value);
+    }
+}

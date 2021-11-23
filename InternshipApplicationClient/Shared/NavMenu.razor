@@ -1,0 +1,63 @@
+﻿<nav class="navbar navbar-expand-md navbar-light nav-css">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <img src="css/logo.png" width="90" height="60">
+        </a>
+        <div class="d-lg-none d-md-none">
+            <button class="btn btn-primary menu" style=" background-color:white" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+        <div class="collapse navbar-collapse sticky-top" id="collapseExample">
+            <nav class="style-1">
+                <a href="/internships/all" class="btn">OFERTY</a>
+                <a href="/companies/all" class="btn">FIRMY</a>
+                <AuthorizeView Roles="Student">
+                    <Authorized>
+                        <a href="/diary" class="btn">DZIENNIK</a>
+                        <a href="/keepers" class="btn">OPIEKUNOWIE</a>
+                        <a href="/questionnaire" class="btn">OCENA</a>
+                        <a href="/student/profile" class="btn">PROFIL</a>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Keeper">
+                    <Authorized>
+                        <a href="/keeper/profile" class="btn">PROFIL</a>
+                        <a href="/students" class="btn">STUDENCI</a>
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="Company">
+                    <Authorized>
+                        <a href="/company/internships" class="btn">OFERTY TWOJEJ FIRMY</a>
+                        <a href="/company/profile" class="btn">PROFIL</a>
+                        <a href="/company/keepers" class="btn">PRACOWNICY</a>
+                    </Authorized>
+                </AuthorizeView>
+            </nav>
+            <nav class="style-1 ml-auto">
+                <AuthorizeView>
+                    <Authorized>
+                        <a href="/logout" class="btn ">WYLOGUJ SIĘ</a>
+                        <a href="/company/signup" class="btnCompany">DLA FIRM</a>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" class="btn">ZALOGUJ SIĘ</a>
+                        <a href="/signup" class="btn">REJESTRACJA</a>
+                        <a href="/company/signup" class="btnCompany">DLA FIRM</a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </nav>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

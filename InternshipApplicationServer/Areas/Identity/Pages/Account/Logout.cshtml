@@ -1,0 +1,17 @@
+﻿@page
+@using DataAcess.Data
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> Mangaer
+
+@functions{
+
+    public async Task<IActionResult> OnGet()
+    {
+        if (Mangaer.IsSignedIn(User))
+        {
+            await Mangaer.SignOutAsync();
+        }
+
+        return Redirect("~/");
+    }
+}

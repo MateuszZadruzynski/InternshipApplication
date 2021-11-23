@@ -1,0 +1,48 @@
+﻿<div class="modal fade" id="confirmDelete" role="dialog" tabindex="-1">
+    <div class="modal-dialog-centered modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Uwaga!</h4>
+            </div>
+            <div class="modal-body">
+                Czy chcesz usunąć obiekt ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="() => OnConfirmChanged(false)">
+                    Anuluj
+                </button>
+                @if (isTrue)
+                {
+                    <button type="button" class="btn btn-danger">Wczytywanie...</button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-danger" @onclick="() => OnConfirmChanged(true)">Usuń</button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    public bool isTrue { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<bool> ConfirmChaged { get; set; }
+
+    [Parameter]
+    public bool isParentTrue { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        isTrue = isParentTrue;
+    }
+
+    protected async Task OnConfirmChanged(bool value)
+    {
+        if (value)
+        {
+            isTrue = true;
+        }
+        await ConfirmChaged.InvokeAsync(value);
+    }
+}

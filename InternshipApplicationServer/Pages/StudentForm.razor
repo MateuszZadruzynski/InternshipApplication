@@ -1,0 +1,200 @@
+﻿@page "/students/create"
+@page "/students/edit/{StudentId:int}"
+
+@using Administration.Interface;
+@using Models
+@using DataAcess.Data
+@using InternshipApplicationServer.ServiceInterface
+@using Microsoft.AspNetCore.Identity
+@using Utils
+@inject StudentInterface StudentInterface
+@inject NavigationManager Navigation
+@inject IJSRuntime Runtime
+@inject UserManager<User> userManager
+@inject RoleManager<IdentityRole> _RoleManager
+
+<div class="div-form">
+    <h2>@Title studenta:</h2>
+
+    <EditForm Model="StudentData" OnValidSubmit="AddNewEditStudent">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Imię:</label>
+                    <InputText placeholder="Name" @bind-Value="StudentData.name" />
+                    <ValidationMessage For="() => StudentData.name"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Nazwisko:</label>
+                    <InputText placeholder="Last Name" @bind-Value="StudentData.lastName" />
+                    <ValidationMessage For="() => StudentData.lastName"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Indeks:</label>
+                    <InputText placeholder="121212" @bind-Value="StudentData.index" />
+                    <ValidationMessage For="() => StudentData.index"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Nr. Telefonu:</label>
+                    <InputText placeholder="+48123456123" @bind-Value="StudentData.telephone" />
+                    <ValidationMessage For="() => StudentData.telephone"></ValidationMessage>
+                </div>
+                @if (Title == "Utwórz")
+                {
+                    <div class="form-group">
+                        <label class="d-block">E-mail:</label>
+                        <InputText placeholder="E-mail" @bind-Value="StudentData.email" />
+                        <ValidationMessage For="() => StudentData.email"></ValidationMessage>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <InputText placeholder="E-mail" hidden @bind-Value="StudentData.email" />
+                        <ValidationMessage For="() => StudentData.email"></ValidationMessage>
+                    </div>
+                }
+                <div class="form-group">
+                    <label class="d-block">Kierunek studiów:</label>
+                    <InputText placeholder="Major" @bind-Value="StudentData.major" />
+                    <ValidationMessage For="() => StudentData.major"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Ulica:</label>
+                    <InputText placeholder="Ul.Pocieszna" @bind-Value="StudentData.street" />
+                    <ValidationMessage For="() => StudentData.street"></ValidationMessage>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Nr. Domu:</label>
+                    <InputText placeholder="12" @bind-Value="StudentData.homeNumber" />
+                    <ValidationMessage For="() => StudentData.homeNumber"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Nr. Ulicy:</label>
+                    <InputText placeholder="12" @bind-Value="StudentData.streetNumber" />
+                    <ValidationMessage For="() => StudentData.streetNumber"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Miasto:</label>
+                    <InputText placeholder="Bydgoszcz" @bind-Value="StudentData.city" />
+                    <ValidationMessage For="() => StudentData.city"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Kod pocztowy:</label>
+                    <InputText placeholder="85-024" @bind-Value="StudentData.postCode" />
+                    <ValidationMessage For="() => StudentData.postCode"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Hasło:</label>
+                    <InputText placeholder="2s@sd!90z" type="password" @bind-Value="StudentData.Password" />
+                    <ValidationMessage For="() => StudentData.Password"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Potwierdź hasło:</label>
+                    <InputText placeholder="2s@sd!90z" type="password" @bind-Value="StudentData.ConfirmPassword" />
+                    <ValidationMessage For="() => StudentData.ConfirmPassword"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">@Title studenta</button>
+            <NavLink href="/students" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+        [Parameter]
+        public int? StudentId { get; set; }
+
+    private StudentDTO StudentData { get; set; } = new StudentDTO();
+
+    private string Title { get; set; } = "Utwórz";
+
+    private List<string> DeleteImagesNames { get; set; } = new List<string>();
+
+    private StudentAvatarsDTO avatarsData { get; set; } = new StudentAvatarsDTO();
+
+    [CascadingParameter]
+    public Task<AuthenticationState> Authentication { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var state = await Authentication;
+        if (!state.User.IsInRole(Utils.AuthenticationData.AdminRole))
+        {
+            var uri = new Uri(Navigation.Uri);
+            Navigation.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}");
+        }
+
+        if (StudentId == null)
+        {
+            StudentData = new StudentDTO();
+        }
+        else
+        {
+            Title = "Edytuj";
+            StudentData = await StudentInterface.GetStudent(StudentId.Value);
+        }
+    }
+    private async Task AddNewEditStudent()
+    {
+        try
+        {
+            var studentByIndex = await StudentInterface.IsIndexUnique(StudentData.index, StudentData.StudentId);
+            if (studentByIndex != null)
+            {
+                await Runtime.InvokeVoidAsync("ToastShow", "error", "Indeks widnieje już w naszej bazie.");
+                return;
+            }
+            if (StudentData.StudentId != 0 && Title == "Edytuj")
+            {
+                var updateData = await StudentInterface.UpdateStudent(StudentData.StudentId, StudentData);
+
+                var user = await userManager.FindByEmailAsync(StudentData.email);
+                if (user == null)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Użytkownik nie istnieje.");
+                }
+                var tokenPassword = await userManager.GeneratePasswordResetTokenAsync(user);
+                var resultPassword = await userManager.ResetPasswordAsync(user, tokenPassword, StudentData.Password);
+
+                if (resultPassword == null)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Błędne hasło.");
+                }
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano studenta.");
+            }
+            else
+            {
+                var student = new User()
+                {
+                    UserName = StudentData.email,
+                    Email = StudentData.email,
+                    Name = StudentData.lastName,
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(student, StudentData.Password);
+                var roleResult = await userManager.AddToRoleAsync(student, AuthenticationData.StudentRole);
+
+                if (!result.Succeeded || !roleResult.Succeeded || !roleResult.Succeeded && !result.Succeeded)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Wystąpił problem przy tworzeniu użytkownika.");
+                }
+
+                var createData = await StudentInterface.CreateStudent(StudentData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Utworzono studenta.");
+            }
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        Navigation.NavigateTo("/students");
+    }
+}

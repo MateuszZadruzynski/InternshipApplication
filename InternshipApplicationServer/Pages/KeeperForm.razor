@@ -1,0 +1,291 @@
+﻿@page "/keepers/create"
+@page "/keepers/edit/{KeeperId:int}"
+
+@using Administration.Interface;
+@using Models
+@using InternshipApplicationServer.ServiceInterface
+@using DataAcess.Data
+@using Microsoft.AspNetCore.Identity
+@using Utils
+@inject KeeperInterface  KeeperInterface
+@inject NavigationManager Navigation
+@inject StudentKeeperInterface studentKeeperInterface
+@inject StudentInterface StudentInterface
+@inject IJSRuntime Runtime
+@inject CompanyInterface companyInterface
+@inject UserManager<User> userManager
+@inject RoleManager<IdentityRole> _RoleManager
+
+<div class="div-form mb-5">
+    <h2>@Title opiekuna:</h2>
+
+    <EditForm Model="KeeperData" OnValidSubmit="AddNewEditKeeper">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Stopień naukowy:</label>
+                    <InputSelect @bind-Value="KeeperData.degree">
+                        @foreach (var degree in Enum.GetValues(typeof(Models.degree)))
+                        {
+                            <option value="@degree">@degree</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="()=>KeeperData.degree"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Imię:</label>
+                    <InputText placeholder="Name" @bind-Value="KeeperData.name" />
+                    <ValidationMessage For="()=>KeeperData.name"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Nazwisko:</label>
+                    <InputText placeholder="Last Name" @bind-Value="KeeperData.lastName" />
+                    <ValidationMessage For="()=>KeeperData.lastName"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Firma:</label>
+                    <InputSelect  @bind-Value="KeeperData.CompanyId">
+                        <option value="">Nie dotyczy</option>
+                        @foreach (var company in companies)
+                        {
+                            <option value="@company.CompanyId">@company.name</option>
+                        }
+                    </InputSelect>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Nr. Telefonu:</label>
+                    <InputText placeholder="+48123456123" @bind-Value="KeeperData.telephone" />
+                    <ValidationMessage For="()=>KeeperData.telephone"></ValidationMessage>
+                </div>
+                @if (Title == "Utwórz")
+                {
+                    <div class="form-group">
+                        <label class="d-block">E-mail:</label>
+                        <InputText placeholder="E-mail" @bind-Value="KeeperData.email" />
+                        <ValidationMessage For="()=>KeeperData.email"></ValidationMessage>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <InputText placeholder="E-mail" hidden @bind-Value="KeeperData.email" />
+                        <ValidationMessage For="()=>KeeperData.email"></ValidationMessage>
+                    </div>
+                }
+                <div class="form-group">
+                    <label class="d-block">Hasło:</label>
+                    <InputText type="password" placeholder="2s@sd!90z" @bind-Value="KeeperData.Password" />
+                    <ValidationMessage For="()=>KeeperData.Password"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Potwierdź hasło:</label>
+                    <InputText type="password" placeholder="2s@sd!90z" @bind-Value="KeeperData.ConfirmPassword" />
+                    <ValidationMessage For="()=>KeeperData.ConfirmPassword"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Opis:</label>
+                    <InputTextArea placeholder="Tutaj możesz podać życiorys." rows="4" style="min-width:100%" @bind-Value="KeeperData.description" />
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <h2>Dodaj studenta</h2>
+            <InputText placeholder="stud@gmail.com" @bind-Value="Email" />
+            <button type="button" class="btn btn-success" @onclick="AddStudent">Dodaj studenta</button>
+            <h2>Twoi studenci</h2>
+            <div class="form-group">
+                <div class="row">
+                    @if (KeeperData.EmailList != null && KeeperData.EmailList.Count > 0)
+                    {
+                        foreach (var email in KeeperData.EmailList)
+                        {
+                            <div class="form-group ml-3">
+                                <ul class="list-group">
+                                    <li class="list-group-item">
+                                        @email<button type="button" class="btn btn-danger" @onclick="() => DeleteStudent(email)">Usuń</button>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">@Title opiekuna</button>
+            <NavLink href="/keepers" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? KeeperId { get; set; }
+
+    public string Email { get; set; }
+
+    private KeeperDTO KeeperData { get; set; } = new KeeperDTO();
+
+    private IEnumerable<CompanyDTO> companies { get; set; } = new List<CompanyDTO>();
+
+    private string Title { get; set; } = "Utwórz";
+
+    private int? DeleteStudentId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    private List<string> DeleteImagesNames { get; set; } = new List<string>();
+
+    private KeeperAvatarsDTO avatarsData { get; set; } = new KeeperAvatarsDTO();
+
+    private StudentKeeperDTO studentKeeperData { get; set; } = new StudentKeeperDTO();
+
+    [CascadingParameter]
+    public Task<AuthenticationState> Authentication { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Authentication;
+        if (!state.User.IsInRole(Utils.AuthenticationData.AdminRole))
+        {
+            var uri = new Uri(Navigation.Uri);
+            Navigation.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}");
+        }
+
+        companies = await companyInterface.GetAllCompanies();
+
+        if (KeeperId == null)
+        {
+            KeeperData = new KeeperDTO();
+        }
+        else
+        {
+            Title = "Edytuj";
+            KeeperData = await KeeperInterface.GetKeeper(KeeperId.Value);
+            if (KeeperData?.Students != null)
+            {
+                KeeperData.EmailList = KeeperData.Students.Select(i => i.Email).ToList();
+            }
+        }
+    }
+
+    private async Task AddNewEditKeeper()
+    {
+        try
+        {
+            if (KeeperData.KeeperId != 0 && Title == "Edytuj")
+            {
+                var updateData = await KeeperInterface.UpdateKeeper(KeeperData.KeeperId, KeeperData);
+               
+                var user = await userManager.FindByEmailAsync(KeeperData.email);
+                if (user == null)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Użytkownik nie istnieje.");
+                }
+                var tokenPassword = await userManager.GeneratePasswordResetTokenAsync(user);
+                var resultPassword = await userManager.ResetPasswordAsync(user, tokenPassword, KeeperData.Password);
+
+                if (resultPassword == null)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Błędne hasło.");
+                }
+                if (KeeperData.EmailList != null)
+                {
+                    await AddKeeperStudent(updateData);
+                }
+
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano pomyślnie.");
+            }
+            else
+            {
+                var keeper = new User()
+                {
+                    UserName = KeeperData.email,
+                    Email = KeeperData.email,
+                    Name = KeeperData.lastName,
+                    EmailConfirmed = true
+                };
+
+                var result = await userManager.CreateAsync(keeper, KeeperData.Password);
+                var roleResult = await userManager.AddToRoleAsync(keeper, AuthenticationData.KeeperRole);
+
+                if (!result.Succeeded || !roleResult.Succeeded || !roleResult.Succeeded && !result.Succeeded)
+                {
+                    await Runtime.InvokeVoidAsync("ToastShow", "error", "Błąd przy aktualizowaniu hasła.");
+                }
+                var createData = await KeeperInterface.CreateKeeper(KeeperData);
+                await AddKeeperStudent(createData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Utworzono opiekuna praktyk.");
+            }
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        Navigation.NavigateTo("/keepers");
+    }
+
+    internal async Task DeleteStudent(string Email)
+    {
+        try
+        {
+            var studentKeeperId = KeeperData.EmailList.FindIndex(i => i == Email);
+            await studentKeeperInterface.DeleteStudentKeeperByEmail(Email);
+            KeeperData.EmailList.RemoveAt(studentKeeperId);
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+    }
+
+    private async Task AddStudent()
+    {
+        var studentList = new List<string>();
+        var data = await StudentInterface.GetStudentByEmail(Email);
+        if (data != null)
+        {
+            studentList.Add(Email);
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Pomyślnie dodano studenta.");
+        }
+        else
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "Podany indeks nie istnieje.");
+        }
+
+        if (KeeperData.EmailList != null && KeeperData.EmailList.Any())
+        {
+            KeeperData.EmailList.AddRange(studentList);
+        }
+        else
+        {
+            KeeperData.EmailList = new List<string>();
+            KeeperData.EmailList.AddRange(studentList);
+        }
+    }
+
+    private async Task AddKeeperStudent(KeeperDTO keeperDTO)
+    {
+        if (KeeperData.EmailList != null)
+        {
+            var data = await StudentInterface.GetStudentByEmail(Email);
+
+            foreach (var email in KeeperData.EmailList)
+            {
+                if (KeeperData.Students == null || KeeperData.Students.Where(i => i.Email == email).Count() == 0)
+                {
+                    studentKeeperData = new StudentKeeperDTO()
+                    {
+                        KeeperId = keeperDTO.KeeperId,
+                        StudentId = data.StudentId,
+                        Email = Email
+                    };
+                    await studentKeeperInterface.CreateStudentKeeper(studentKeeperData);
+                }
+            }
+        }
+    }
+}

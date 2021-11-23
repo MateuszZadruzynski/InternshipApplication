@@ -1,0 +1,21 @@
+﻿.email {
+    background-color: #fff;
+    box-shadow: 5px 15px 5px 5px rgb(0 0 0 / 40%);
+    box-sizing: content-box;
+    width: auto;
+    height: auto;
+    max-width: 50%;
+    border-radius: 6px;
+    margin: auto;
+}
+button {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+a {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}

@@ -1,0 +1,152 @@
+﻿@page "/companies"
+@page "/"
+@using Administration.Interface;
+@using Models
+@using DataAcess.Data
+@using Microsoft.AspNetCore.Identity
+@using Utils
+@inject CompanyInterface CompanyInterface
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavMenager
+@attribute [Authorize(Roles = Utils.AuthenticationData.AdminRole)]
+@inject UserManager<User> userManager
+@inject RoleManager<IdentityRole> _RoleManager
+
+<div class="filtr">
+    <div class="row">
+        <div class="find">
+            <input class="search" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj" />
+        </div>
+        <div class="add  ml-auto">
+            <NavLink class="btn btn-secondary" href="/companies/create">
+                <span class="oi oi-plus"></span> Dodaj
+            </NavLink>
+        </div>
+    </div>
+</div>
+@if (companyData != null)
+{
+    @foreach (var eachCompany in companyData.Where(x => IsVisible(x)))
+    {
+        <br />
+        <div class="bg-dark">
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <th>Nazwa Firmy</th>
+                        <th>NIP</th>
+                        <th>Rodzaj</th>
+                        <th>Adres</th>
+                        <th>Miasto</th>
+                        <th>Kod pocztowy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            @eachCompany.name
+                        </td>
+                        <td>
+                            @eachCompany.nip
+                        </td>
+                        <td>
+                            @eachCompany.type
+                        </td>
+                        <td>
+                            @eachCompany.street @eachCompany.streetNumber
+                        </td>
+                        <td>
+                            @eachCompany.city
+                        </td>
+                        <td>
+                            @eachCompany.postCode
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="desc bg-dark">
+                <label class="d-block">Opis firmy:</label>
+                @eachCompany.description
+                <div class="buttons">
+                    <NavLink href="@($"/companies/edit/{eachCompany.CompanyId}")" class="btn btn-success">Edytuj</NavLink>
+                    <NavLink class="btn btn-danger" @onclick="() => DeleteCompany(eachCompany.CompanyId, eachCompany.email)">Usuń</NavLink>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <NoDataFound></NoDataFound>
+}
+
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code{
+    private IEnumerable<CompanyDTO> companyData { get; set; } = new List<CompanyDTO>();
+    private int? DeleteCompanyId { get; set; } = null;
+    private string? DeleteCompanyEmail { get; set; } = null;
+    private bool Started { get; set; } = false;
+    public string Filter { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        companyData = await CompanyInterface.GetAllCompanies();
+    }
+
+    private async Task DeleteCompany(int CompanyId, string email)
+    {
+        DeleteCompanyId = CompanyId;
+        DeleteCompanyEmail = email;
+        await JsRuntime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public bool IsVisible(CompanyDTO eachCompany)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (eachCompany.name.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachCompany.city.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachCompany.type.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachCompany.postCode.ToString().StartsWith(Filter))
+            return true;
+
+        if (eachCompany.nip.ToString().StartsWith(Filter))
+            return true;
+
+        return false;
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteCompanyId != null)
+        {
+            CompanyDTO company = await CompanyInterface.GetCompany(DeleteCompanyId.Value);
+            var user = await userManager.FindByEmailAsync(DeleteCompanyEmail);
+
+            if (user == null)
+            {
+                await JsRuntime.InvokeVoidAsync("ToastShow", "error", "Użytkownik nie istnieje.");
+            }
+
+            var result = await userManager.DeleteAsync(user);
+
+            if (result != null)
+            {
+                await CompanyInterface.DeleteCompany(DeleteCompanyId.Value);
+                await JsRuntime.InvokeVoidAsync("ToastShow", "success", "Użytkownik został usunięty.");
+            }
+            companyData = await CompanyInterface.GetAllCompanies();
+        }
+        await JsRuntime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+}

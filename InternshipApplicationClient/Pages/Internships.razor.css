@@ -1,0 +1,116 @@
+﻿.details {
+    background-color: #ebebeb;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    align-content: center;
+    height: 90%;
+    padding: 30px 30px 30px 30px;
+}
+
+.image {
+    position: relative;
+    overflow: hidden;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    top: -9999px;
+    left: -9999px;
+    right: -9999px;
+    bottom: -9999px;
+    height: 300px;
+    object-fit: cover;
+    width: 100%;
+    object-position: 100% 0;
+}
+
+.filtr {
+    position: relative;
+    padding: 25px;
+    background-color: white;
+    box-sizing: content-box;
+    width: auto;
+    border-radius: 3px;
+    align-content: center;
+    height: 90%;
+}
+
+.find {
+    float: left;
+    padding: 5px;
+    margin-right: auto;
+}
+.card {
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
+.card {
+    flex-direction: row;
+    align-items: center;
+}
+
+.details {
+    background-color: #ebebeb;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    align-content: center;
+    height: 90%;
+    padding: 30px 30px 30px 30px;
+}
+
+.card-title {
+    font-size: xx-large;
+    text-decoration: underline;
+    text-decoration-color: cadetblue;
+}
+
+.card-subtitle {
+    font-size: small;
+    font: 100;
+}
+
+.border-card {
+    margin-left: 10%;
+    margin-right: 10%;
+    box-shadow: 0 10px 16px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%) !important;
+}
+
+.btn {
+    border: 1px solid black;
+    color: whitesmoke;
+    font: bold;
+    background-color: #659DBD;
+    float:right;
+}
+
+.title {
+    font-size: 2em;
+    font-weight: bold;
+    text-align: left;
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.oi {
+    color: darkgoldenrod;
+    font-size: large;
+    border-radius: 15px 50px;
+}
+
+a {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.search {
+    background-color: #ebebeb;
+    padding: 0 1.6rem;
+    border-radius: 3px;
+    border: solid 1px black;
+    z-index: 1;
+    position: relative;
+    color: dimgrey;
+    font-size: 1.8rem;
+    float:right;
+}

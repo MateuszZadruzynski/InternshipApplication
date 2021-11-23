@@ -1,0 +1,120 @@
+﻿@page "/company/signup"
+
+@inject AuthenticationInterface authenticationInterface
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+@inject CompanyInterface companyInterface
+
+<div class="div-form">
+    <h2>Rejestracja firmy:</h2>
+
+    <EditForm Model="CompanySignUp" OnValidSubmit="RegisterCompany">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Nazwa firmy:</label>
+                    <InputText placeholder="Name" @bind-Value="CompanySignUp.name" />
+                    <ValidationMessage For="() => CompanySignUp.name"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">NIP:</label>
+                    <InputText placeholder="1111111111" @bind-Value="CompanySignUp.nip" />
+                    <ValidationMessage For="() => CompanySignUp.nip"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Rodzaj:</label>
+                    <InputSelect @bind-Value="CompanySignUp.type">
+                        <ValidationMessage For="() => CompanySignUp.type"></ValidationMessage>
+                        <option>rodzaje..</option>
+                        <option value="Inforamtyka">Informatka</option>
+                        <option value="Chemia">Chemia</option>
+                        <option value="Budownictwo">Budownictwo</option>
+                        <option value="Elektronika">Elektronika</option>
+                        <option value="Architektura">Architektura</option>
+                        <option value="Administracja">Administracja</option>
+                        <option value="Warsztat">Warsztat</option>
+                        <option value="Szkoła">Szkoła</option>
+                        <option value="Uczelnia">Uczelnia</option>
+                        <option value="Kosmetologia">Kosmetologia</option>
+                        <option value="Turystyka">Turystyka</option>
+                        <option value="Gastronomia">Gastronomia</option>
+                        <option value="Medycyna">Medycyna</option>
+                        <option value="Prawo">Prawo</option>
+                        <option value="Zarządzanie">Zarządzanie</option>
+                    </InputSelect>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">E-mail:</label>
+                    <InputText placeholder="E-mail" @bind-Value="CompanySignUp.email" />
+                    <ValidationMessage For="() => CompanySignUp.email"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Hasło:</label>
+                    <InputText type="password" placeholder="2s@sd!90z" @bind-Value="CompanySignUp.Password" />
+                    <ValidationMessage For="() => CompanySignUp.Password"></ValidationMessage>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Ulica:</label>
+                    <InputText placeholder="Ul.Pocieszna" @bind-Value="CompanySignUp.street" />
+                    <ValidationMessage For="() => CompanySignUp.street"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Numer ulicy:</label>
+                    <InputText placeholder="12" @bind-Value="CompanySignUp.streetNumber" />
+                    <ValidationMessage For="() => CompanySignUp.streetNumber"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Miasto:</label>
+                    <InputText placeholder="Bydgoszcz" @bind-Value="CompanySignUp.city" />
+                    <ValidationMessage For="() => CompanySignUp.city"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Kod pocztowy:</label>
+                    <InputText placeholder="85-024" @bind-Value="CompanySignUp.postCode" />
+                    <ValidationMessage For="() => CompanySignUp.postCode"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Potwierdź hasło:</label>
+                    <InputText type="password" placeholder="2s@sd!90z" @bind-Value="CompanySignUp.ConfirmPassword" />
+                    <ValidationMessage For="() => CompanySignUp.ConfirmPassword"></ValidationMessage>
+                </div>
+                <InputText @bind-Value="CompanySignUp.description" hidden />
+            </div>
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">Rejestracja</button>
+            <NavLink href="/companies" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+    private CompanyDTO CompanySignUp { get; set; } = new CompanyDTO();
+
+    private async Task RegisterCompany()
+    {
+        var nip = await companyInterface.CheckNIP(CompanySignUp.nip);
+        if (nip != null)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "NIP widnieje w naszej bazie danych.");
+            return;
+        }
+        else
+        {
+            var result = await authenticationInterface.SignUpCompany(CompanySignUp);
+
+            if (!result.isSuccessful)
+            {
+                await Runtime.InvokeVoidAsync("ToastShow", "error", "Przykro nam, ale coś poszło nie tak.");
+            }
+            else
+            {
+                navigationManager.NavigateTo("/login");
+            }
+        }
+    } 
+}
+

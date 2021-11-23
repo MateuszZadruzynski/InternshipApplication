@@ -1,0 +1,128 @@
+﻿@page "/questionnaire"
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@inject QuestionnaireInterface questionnaireInterface
+@inject IJSRuntime Runtime
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.StudentRole)]
+
+@if (questionnaireData == null)
+{
+    <div class="alert alert-info text-center mt-5 mb-5 ml-5 mr-5" role="contentinfo" style="margin-top:30px;">
+        <h4 class="info-heading"><i class="oi oi-pencil"></i>Brak opinni.</h4>
+        <p>Opiekun nie wystawił jeszcze, opini o Twoich praktykach.</p>
+        <hr>
+        <p class="mb-0">Jeśli problem się utrzymję proszę skontaktować się z opiekunem praktyk.</p>
+        <p>W tym celu proszę udać się do  <a href="/keepers" class="alert-link">listy opiekunów.</a></p>
+    </div>
+}
+else
+{
+    @foreach (var questionnaire in questionnaireData)
+    {
+        <div class="data mb-4">
+            <div class="row">
+                <div class="col">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Oceniający:</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800;">
+                                    @questionnaire.Keeper.name @questionnaire.Keeper.lastName
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Czy student przykładał się do swoich obowiązków?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionOne / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Czy student wykazywał się wysoką kulturą osobistą?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionTwo / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Czy dobrze przebiegała współpraca między studentem a pracownikami?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionThree / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Czy student wykazał się samodzielnością?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionFour / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Czy student wykorzystał więdze teoretyczną w praktyce?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionFive / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col" style="font-weight:800">
+                                    <h4>Czy student przestrzegał zasad BHP?</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.QuestionSix / 5
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Suma punktów:</h4>
+                                </div>
+                                <div class="col-4" style="font-weight:800">
+                                    @questionnaire.Points / 30
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <h4>Opinia słownie:</h4>
+                                </div>
+                                <div class="m-4">
+                                    @questionnaire.Opinion
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row-reverse button">
+                        <a href="/" class="btn btn-danger">Wyjdź</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public int? StudentId { get; set; }
+
+    private IEnumerable<QuestionnaireModelDTO> questionnaireData { get; set; } = new List<QuestionnaireModelDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData);
+            StudentId = data.StudentId;
+        }
+        questionnaireData = await questionnaireInterface.GetQuestionnaireByStudentId(StudentId.Value);
+    }
+}

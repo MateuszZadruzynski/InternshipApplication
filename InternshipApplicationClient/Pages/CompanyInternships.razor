@@ -1,0 +1,161 @@
+﻿@page "/company/internships"
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@inject InternshipInterface internshipsInterface
+@inject CompanyInterface companyInterface
+@inject IJSRuntime Runtime
+
+
+<div class="filtr mr-4 ml-4 border-card">
+    <div class="row">
+        <div class="find">
+            <div style="color:black; font-size:25px; float:left">Filtrowanie według słów kluczowych:</div>
+        </div>
+        <div class="add  ml-auto">
+            <input class="search mr-auto" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj" />
+        </div>
+    </div>
+</div>
+
+@if (internships == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Wczytywanie danych...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card py-4 p-3 border-0 mt-4 ml-4 mr-4 mb-4">
+        <div class="card-body">
+            <h1>
+                Twoje ofert praktyk
+                <a class="btn btn-success float-right" href="/company/internship/create">
+                    <span class="oi oi-plus"> Dodaj</span>
+                </a>
+            </h1>
+        </div>
+    </div>
+    @foreach (var internship in internships.Where(x => IsVisible(x)))
+    {
+        <div class="card py-4 p-3 border-0 ml-4 mr-4 mb-4">
+            <div class="card-body">
+                <div class="card-title">
+                    <div class="title"> @internship.worksite</div>
+                </div>
+                <div class="card-subtitle">
+                    <div class="oi oi-clock"></div>
+                    <span aria-hidden="true">Godziny pracy: @internship.workTime</span>
+                    <br />
+                    @if (internship.month == month.Uzgodnienie)
+                    {
+                        <div class="oi oi-calendar"></div>
+                        <span aria-hidden="true">Miesiąc praktyk należy ustalić podczas rekrutacji.</span>
+                    }
+                    else
+                    {
+                        <div class="oi oi-calendar"></div>
+                        <span aria-hidden="true">Praktyki odbywają się w: @internship.month</span>
+                    }
+                    <br />
+                    @if (internship.salary == 0)
+                    {
+                        <div class=" oi oi-dollar"></div>
+                        <span aria-hidden="true">Wynagrodzenie: Brak</span>
+                    }
+                    else
+                    {
+                        <div class="oi oi-dollar"></div>
+                        <span aria-hidden="true">Wynagrodzenie: @internship.salary zł</span>
+                    }
+                </div>
+                <div class="card-text">
+                    <div class="title mt-1">
+                        Twoje zadania:
+                    </div>
+                    @internship.tasks
+                </div>
+                <div class="card-text">
+                    <div class="title mt-1">
+                        O nas:
+                    </div>
+                    @internship.description
+                </div>
+                <div class="form-group">
+                    <a class="btn btn-success float-right m-2" href="@($"/company/internships/edit/{internship.InternshipID}")">
+                        <span class="oi oi-plus"> Edytuj</span>
+                    </a>
+                    <button class="btn btn-danger float-right m-2" @onclick="() => DeleteInternship(internship.InternshipID)">
+                        <span class="oi oi-trash"> Usuń</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code {
+    [Parameter]
+    public int? companyId { get; set; }
+
+    private int? DeleteInternshipId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    public string Filter { get; set; }
+
+    public IEnumerable<InternshipDTO> internships = new List<InternshipDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<CompanyDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<CompanyDTO>(AuthenticationData.UserData);
+            companyId = data.CompanyId;
+        }
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        internships = await internshipsInterface.GetInternshipsByCompanyId(companyId.Value);
+    }
+
+    private async Task DeleteInternship(int InternsipId)
+    {
+        DeleteInternshipId = InternsipId;
+        await Runtime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public bool IsVisible(InternshipDTO internship)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (internship.worksite.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (internship.month.ToString().StartsWith(Filter))
+            return true;
+
+        if (internship.workTime.ToString().StartsWith(Filter))
+            return true;
+
+        return false;
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteInternshipId != null)
+        {
+            await internshipsInterface.DeleteInternship(DeleteInternshipId.Value);
+        }
+        await Runtime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+}

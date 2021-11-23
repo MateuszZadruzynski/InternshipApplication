@@ -1,0 +1,174 @@
+﻿@page "/student/questionnaire/{StudentId:int}"
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager navigationManager
+@inject QuestionnaireInterface questionnaireInterface
+@inject IJSRuntime Runtime
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.KeeperRole)]
+
+<div class="div-form">
+    <h2>@Title opinię:</h2>
+
+    <EditForm Model="questionnaireData" OnValidSubmit="AddNewEditQuestionnaire">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <InputNumber @bind-Value="questionnaireData.StudentId" hidden />
+                </div>
+                <div class="form-group">
+                    <InputNumber @bind-Value="questionnaireData.KeeperId" hidden />
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy student przykładał się do swoich obowiązków?</label>
+                    <InputRadioGroup Name="One" @bind-Value="questionnaireData.QuestionOne">
+                        <InputRadio Name="One" Value="1"></InputRadio> 1
+                        <InputRadio Name="One" Value="2"></InputRadio> 2
+                        <InputRadio Name="One" Value="3"></InputRadio> 3
+                        <InputRadio Name="One" Value="4"></InputRadio> 4
+                        <InputRadio Name="One" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy student wykazywał się wysoką kulturą osobistą?</label>
+                    <InputRadioGroup Name="Two" @bind-Value="questionnaireData.QuestionTwo">
+                        <InputRadio Name="Two" Value="1"></InputRadio> 1
+                        <InputRadio Name="Two" Value="2"></InputRadio> 2
+                        <InputRadio Name="Two" Value="3"></InputRadio> 3
+                        <InputRadio Name="Two" Value="4"></InputRadio> 4
+                        <InputRadio Name="Two" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy dobrze przebiegała współpraca między studentem a pracownikami?</label>
+                    <InputRadioGroup Name="Three" @bind-Value="questionnaireData.QuestionThree">
+                        <InputRadio Name="Three" Value="1"></InputRadio> 1
+                        <InputRadio Name="Three" Value="2"></InputRadio> 2
+                        <InputRadio Name="Three" Value="3"></InputRadio> 3
+                        <InputRadio Name="Three" Value="4"></InputRadio> 4
+                        <InputRadio Name="Three" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy student wykazał się samodzielnością?</label>
+                    <InputRadioGroup Name="Four" @bind-Value="questionnaireData.QuestionFour">
+                        <InputRadio Name="Four" Value="1"></InputRadio> 1
+                        <InputRadio Name="Four" Value="2"></InputRadio> 2
+                        <InputRadio Name="Four" Value="3"></InputRadio> 3
+                        <InputRadio Name="Four" Value="4"></InputRadio> 4
+                        <InputRadio Name="Four" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy student wykorzystał więdze teoretyczną w praktyce?</label>
+                    <InputRadioGroup Name="Five" @bind-Value="questionnaireData.QuestionFive">
+                        <InputRadio Name="Five" Value="1"></InputRadio> 1
+                        <InputRadio Name="Five" Value="2"></InputRadio> 2
+                        <InputRadio Name="Five" Value="3"></InputRadio> 3
+                        <InputRadio Name="Five" Value="4"></InputRadio> 4
+                        <InputRadio Name="Five" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Czy student przestrzegał zasad BHP?</label>
+                    <InputRadioGroup Name="Six" @bind-Value="questionnaireData.QuestionSix">
+                        <InputRadio Name="Six" Value="1"></InputRadio> 1
+                        <InputRadio Name="Six" Value="2"></InputRadio> 2
+                        <InputRadio Name="Six" Value="3"></InputRadio> 3
+                        <InputRadio Name="Six" Value="4"></InputRadio> 4
+                        <InputRadio Name="Six" Value="5"></InputRadio> 5
+                    </InputRadioGroup>
+                </div>
+            </div>
+        </div>
+        <InputNumber @bind-Value="questionnaireData.Points" hidden />
+        <ValidationMessage For="()=>questionnaireData.Points"></ValidationMessage>
+        <div class="form-group">
+            <label class="d-block">Twoja opinia:</label>
+            <InputTextArea placeholder="Tutaj możesz dodać opinię" rows="4" style="min-width:100%" @bind-Value="questionnaireData.Opinion" />
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">@Title opinie</button>
+            <NavLink href="/students" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+
+</div>
+
+@code {
+    public int keeperId { get; set; }
+
+    [Parameter]
+    public int? StudentId { get; set; }
+
+    private string Title { get; set; } = "Utwórz";
+
+
+    private QuestionnaireModelDTO questionnaireData { get; set; } = new QuestionnaireModelDTO();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData);
+            keeperId = data.KeeperId;
+        }
+
+        if (questionnaireData == null)
+        {
+            questionnaireData = new QuestionnaireModelDTO();
+            questionnaireData.StudentId = StudentId.Value;
+            questionnaireData.KeeperId = keeperId;
+        }
+        else
+        {
+            Title = "Edytuj";
+            questionnaireData.StudentId = StudentId.Value;
+            questionnaireData.KeeperId = keeperId;
+            questionnaireData = await questionnaireInterface.GetQuestionnaireByKeeperIdAndStudentId(StudentId.Value, keeperId);
+        }
+    }
+
+    private async Task AddNewEditQuestionnaire()
+    {
+        try
+        {
+            if (questionnaireData.QuestionnaireiD != 0 && Title == "Edytuj")
+            {
+                var Val1 = questionnaireData.QuestionOne;
+                var Val2 = questionnaireData.QuestionTwo;
+                var Val3 = questionnaireData.QuestionThree;
+                var Val4 = questionnaireData.QuestionFour;
+                var Val5 = questionnaireData.QuestionFive;
+                var Val6 = questionnaireData.QuestionSix;
+
+                questionnaireData.Points = Val1 + Val2 + Val3 + Val4 + Val5 + Val6;
+
+                var updateData = await questionnaireInterface.UpdateQuestionnaire(questionnaireData.QuestionnaireiD, questionnaireData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano opinię.");
+            }
+            else
+            {
+                var Val1 = questionnaireData.QuestionOne;
+                var Val2 = questionnaireData.QuestionTwo;
+                var Val3 = questionnaireData.QuestionThree;
+                var Val4 = questionnaireData.QuestionFour;
+                var Val5 = questionnaireData.QuestionFive;
+                var Val6 = questionnaireData.QuestionSix;
+
+                questionnaireData.Points = Val1 + Val2 + Val3 + Val4 + Val5 + Val6;
+
+                var createData = await questionnaireInterface.CreateQuestionnaire(questionnaireData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Opinia utworzona pozytywnie.");
+            }
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        navigationManager.NavigateTo("/students");
+    }
+
+}

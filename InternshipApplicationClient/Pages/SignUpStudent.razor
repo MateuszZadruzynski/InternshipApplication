@@ -1,0 +1,104 @@
+﻿@page "/signup/student"
+
+@inject AuthenticationInterface authenticationInterface
+@inject StudentInterface studentInterface
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+
+<div class="div-form">
+    <h2>Rejestracja studenta:</h2>
+
+    <EditForm Model="StudentSignUp" OnValidSubmit="RegisterStudent">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col-sm pb-1">
+                <div class="form-group">
+                    <InputText placeholder="Imię" @bind-Value="StudentSignUp.name" />
+                    <ValidationMessage For="()=>StudentSignUp.name"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Nazwisko" @bind-Value="StudentSignUp.lastName" />
+                    <ValidationMessage For="()=>StudentSignUp.lastName"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Indeks" @bind-Value="StudentSignUp.index" />
+                    <ValidationMessage For="()=>StudentSignUp.index"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Telefon (123123123)" @bind-Value="StudentSignUp.telephone" />
+                    <ValidationMessage For="()=>StudentSignUp.telephone"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="E-mail" @bind-Value="StudentSignUp.email" />
+                    <ValidationMessage For="()=>StudentSignUp.email"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Kierunek studiów" @bind-Value="StudentSignUp.major" />
+                    <ValidationMessage For="()=>StudentSignUp.major"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Ul.Ulica" @bind-Value="StudentSignUp.street" />
+                    <ValidationMessage For="()=>StudentSignUp.street"></ValidationMessage>
+                </div>
+            </div>
+            <div class="col-sm">
+                <div class="form-group">
+                    <InputText placeholder="Numer ulicy" @bind-Value="StudentSignUp.streetNumber" />
+                    <ValidationMessage For="()=>StudentSignUp.streetNumber"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Number domu" @bind-Value="StudentSignUp.homeNumber" />
+                    <ValidationMessage For="()=>StudentSignUp.homeNumber"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Miasto" @bind-Value="StudentSignUp.city" />
+                    <ValidationMessage For="()=>StudentSignUp.city"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Kod pocztowy" @bind-Value="StudentSignUp.postCode" />
+                    <ValidationMessage For="()=>StudentSignUp.postCode"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText type="password" placeholder="Hasło" @bind-Value="StudentSignUp.Password" />
+                    <ValidationMessage For="()=>StudentSignUp.Password"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText type="password" placeholder="Powtórz hasło" @bind-Value="StudentSignUp.ConfirmPassword" />
+                    <ValidationMessage For="()=>StudentSignUp.ConfirmPassword"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <label class="buttons">
+            <button type="submit" class="btn-submit btn">Rejestracja</button>
+            <a href="/students" class="btn btn-dark">Wyjdź</a>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+
+    private StudentDTO StudentSignUp { get; set; } = new StudentDTO();
+
+    private async Task RegisterStudent()
+    {
+        var index = await studentInterface.CheckIndex(StudentSignUp.index);
+        if (index != null)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "Indeks widnieje już w naszej bazie.");
+            return;
+        }
+        else
+        {
+            var result = await authenticationInterface.SignUpStudent(StudentSignUp);
+
+            if (!result.isSuccessful)
+            {
+                await Runtime.InvokeVoidAsync("ToastShow", "error", "Przykro nam, ale coś poszło nie tak.");
+            }
+            else
+            {
+                navigationManager.NavigateTo("/login");
+            }
+        }
+    }
+}

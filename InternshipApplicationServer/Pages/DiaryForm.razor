@@ -1,0 +1,83 @@
+﻿@page "/diary/edit/{DiaryId:int}"
+
+@using Administration.Interface;
+@using Models
+@inject DiaryInterface DiaryInterface
+@inject NavigationManager Navigation
+@inject IJSRuntime Runtime
+
+<div class="div-form">
+    <h2>Edytuj dziennik:</h2>
+
+    <EditForm Model="DiaryData" OnValidSubmit="EditDiary">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="d-block">Tytuł:</label>
+                    <InputText placeholder="Name" @bind-Value="DiaryData.title" />
+                    <ValidationMessage For="()=>DiaryData.title"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <label class="d-block">Data:</label>
+                    <InputDate placeholder="2020-12-30" @bind-Value="DiaryData.Date" />
+                    <ValidationMessage For="()=>DiaryData.Date"></ValidationMessage>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="d-block">Streszczenie:</label>
+            <InputTextArea placeholder="Here you can describe your company" rows="4" style="min-width:100%" @bind-Value="DiaryData.summary" />
+        </div>
+        <div class="form-group">
+            <label class="d-block">Opis:</label>
+            <InputTextArea placeholder="Here you can describe your company" rows="4" style="min-width:100%" @bind-Value="DiaryData.description" />
+        </div>
+        <div class="form-group">
+            <label class="d-block">Podsumowanie:</label>
+            <InputTextArea placeholder="Here you can describe your company" rows="4" style="min-width:100%" @bind-Value="DiaryData.conclustion" />
+        </div>
+        <label class="buttons">
+            <button class="btn-submit">Edytuj</button>
+            <NavLink href="/diary" class="btn btn-dark">Wyjdź</NavLink>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+    [Parameter]
+    public int? DiaryId { get; set; }
+
+    private DiaryDTO DiaryData { get; set; } = new DiaryDTO();
+
+    private string Title { get; set; } = "Create";
+
+    [CascadingParameter]
+    public Task<AuthenticationState> Authentication { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        DiaryData = await DiaryInterface.GetDiary(DiaryId.Value);
+
+        var state = await Authentication;
+        if (!state.User.IsInRole(Utils.AuthenticationData.AdminRole))
+        {
+            var uri = new Uri(Navigation.Uri);
+            Navigation.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}");
+        }
+    }
+    private async Task EditDiary()
+    {
+        try
+        {
+            var updateData = await DiaryInterface.UpdateDiary(DiaryData.DiaryId, DiaryData);
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Diary updated.");
+        }
+        catch (Exception error)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", error.Message);
+        }
+        Navigation.NavigateTo("/diary");
+    }
+}

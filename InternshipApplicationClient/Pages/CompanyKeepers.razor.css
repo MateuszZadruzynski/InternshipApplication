@@ -1,0 +1,41 @@
+﻿.data {
+    position: relative;
+    max-width: 80%;
+    box-sizing: content-box;
+    width: auto;
+    height: auto;
+    margin: auto;
+    margin-top: 10px;
+}
+
+.card {
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    display: flex;
+    justify-content: space-around;
+}
+
+.rounded-circle {
+    width: 100px;
+}
+
+.oi {
+    font-size: large;
+}
+
+@media screen and (max-width: 1000px) {
+    .card {
+        flex-wrap: wrap;
+    }
+
+    .img {
+        width: 50%;
+        border: 2px solid white;
+        box-sizing: border-box;
+    }
+}
+
+img {
+    width: 100px;
+    margin: 2px;
+}
+

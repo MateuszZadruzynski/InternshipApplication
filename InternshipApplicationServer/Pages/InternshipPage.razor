@@ -1,0 +1,126 @@
+﻿@page "/internship"
+
+@using Administration.Interface;
+@using Models
+
+@inject InternshipInterface InternshipInterface
+@inject CompanyInterface CompanyInterface
+@attribute [Authorize(Roles = Utils.AuthenticationData.AdminRole)]
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavManager
+@inject IJSRuntime JsRuntime
+<div class="filtr">
+    <div class="row">
+        <div class="find">
+            <input class="search" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj..." />
+        </div>
+        <div class="add  ml-auto">
+            <NavLink class="btn btn-secondary" href="/internship/create">
+                <span class="oi oi-plus"></span> Dodaj
+            </NavLink>
+        </div>
+    </div>
+</div>
+@if (internshipData.Any())
+{
+    @foreach (var eachInternship in internshipData.Where(x => IsVisible(x)))
+    {
+        <br />
+        <div class="data table-responsive bg-dark">
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <th>Stanowisko praktyki</th>
+                        <th>Pensja</th>
+                        <th>Czas pracy</th>
+                        <th>Miesiąc</th>
+                        <th>Firma</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            @eachInternship.worksite
+                        </td>
+                        <td>
+                            @eachInternship.salary
+                        </td>
+                        <td>
+                            @eachInternship.workTime
+                        </td>
+                        <td>
+                            @eachInternship.month
+                        </td>
+                        <td>
+                            @eachInternship.Company.name
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="desc bg-dark">
+                <label class="d-block">Opis praktyki:</label>
+                @eachInternship.description
+                <label class="d-block">Twoje zadania:</label>
+                @eachInternship.tasks
+                <div class="buttons">
+                    <NavLink href="@($"/internship/edit/{eachInternship.InternshipID}")" class="btn btn-success">Edytuj</NavLink>
+                    <NavLink class="btn btn-danger" @onclick="() => DeleteInternship(eachInternship.InternshipID)">Usuń</NavLink>
+                </div>
+            </div>
+        </div>
+
+    }
+}
+else
+{
+    <NoDataFound></NoDataFound>
+}
+
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code{
+    private IEnumerable<InternshipDTO> internshipData { get; set; } = new List<InternshipDTO>();
+    private int? DeleteInternshipId { get; set; } = null;
+    private bool Started { get; set; } = false;
+    public string Filter { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        internshipData = await InternshipInterface.GetAllInternships();
+    }
+
+    private async Task DeleteInternship(int InternshipId)
+    {
+        DeleteInternshipId = InternshipId;
+        await JsRuntime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public bool IsVisible(InternshipDTO eachInternship)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (eachInternship.Company.name.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachInternship.worksite.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (eachInternship.month.ToString().StartsWith(Filter))
+            return true;
+
+        return false;
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteInternshipId != null)
+        {
+            await InternshipInterface.DeleteInternship(DeleteInternshipId.Value);
+            internshipData = await InternshipInterface.GetAllInternships();
+        }
+        await JsRuntime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+}

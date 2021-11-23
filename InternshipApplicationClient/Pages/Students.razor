@@ -1,0 +1,143 @@
+﻿@page "/students"
+
+@inject StudentInterface studentInterface
+@inject StudentKeeperInterface studentKeeperInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime Runtime
+@inject NavigationManager manger
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = Utils.AuthenticationData.KeeperRole)]
+<div class="data">
+    <div class="add">
+        <div class="row">
+            <h2 class="ml-2">Dodawanie studenta:</h2>
+            <input class="ml-2" placeholder="JanKowalski@gmail.com" type="text" @bind-value="studentEmail" style="float:right" />
+            <button class="btn btn-success ml-2" style="float:right" @onclick="AddStudent">Dodaj studenta</button>
+        </div>
+    </div>
+    @if (studentsList.Any())
+    {
+        @foreach (var student in studentsList)
+        {
+            <div class="card flex-row mt-3">
+                <div class="col-md col-xs-6  m-auto">
+                    <div class="row">
+                        @if (student.StudentAvatars != null)
+                        {
+                            <img src="@student.StudentAvatars.URL" class="ml-4" />
+                        }
+                        else
+                        {
+                            <img src="https://cdn-icons-png.flaticon.com/512/147/147144.png" class="ml-4" />
+                        }
+                    </div>
+                </div>
+                <div class="col-md col-xs-6 m-auto">
+                    <h4> @student.name @student.lastName</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4>@student.telephone </h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto">
+                    <h4> @student.email</h4>
+                </div>
+                <div class="col-md col-xs-6  m-auto ml-5 mr-5">
+                    <a href="@($"/student/questionnaire/{student.StudentId}")" class="text-success ml-3"><div class="oi oi-plus"></div></a>
+                    <a href="@($"/student/details/{student.StudentId}")" class="text-info ml-3"><div class="oi oi-eye"></div></a>
+                    <a class="text-danger ml-3" @onclick="() =>DeleteStudent(student.StudentId)"><div class="oi oi-trash"></div></a>
+                </div>
+            </div>
+        }
+
+    }
+    else
+    {
+        <NoDataFound></NoDataFound>
+    }
+</div>
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code {
+    [Parameter]
+    public int? keeperId { get; set; }
+
+    public string studentEmail { get; set; }
+
+    private KeeperDTO KeeperData { get; set; } = new KeeperDTO();
+
+    private StudentKeeperDTO studentKeeperDTO { get; set; } = new StudentKeeperDTO();
+
+    private IEnumerable<StudentKeeperDTO> studentKeeper { get; set; } = new List<StudentKeeperDTO>();
+
+    private StudentDTO studendivata { get; set; } = new StudentDTO();
+
+    private List<StudentDTO> studentsList { get; set; } = new List<StudentDTO>();
+
+    private int? DeleteStudentId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<KeeperDTO>(AuthenticationData.UserData);
+            keeperId = data.KeeperId;
+        }
+        studentKeeper = await studentKeeperInterface.GetAllStudentIdByKeeperId(keeperId.Value);
+
+        if (studentKeeper != null)
+        {
+            foreach (var student in studentKeeper)
+            {
+                var id = student.StudentId;
+                studendivata = await studentInterface.GetStudent(id);
+                studentsList.Add(studendivata);
+            }
+        }
+    }
+
+    private async Task DeleteStudent(int StudentId)
+    {
+        DeleteStudentId = StudentId;
+        await Runtime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteStudentId != null)
+        {
+            await studentKeeperInterface.DeleteStudentByStudentId(DeleteStudentId.Value);
+            manger.NavigateTo("/students", true);
+        }
+        await Runtime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+
+    private async Task AddStudent()
+    {
+        var data = await studentInterface.GetStudentByEmail(studentEmail);
+
+        if (data == null)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "Podany email nie istnieje.");
+            studentEmail = "";
+            return;
+        }
+        else
+        {
+            var newData = new StudentKeeperDTO()
+            {
+                KeeperId = keeperId.Value,
+                StudentId = data.StudentId,
+                Email = data.email
+            };
+
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Student został pomyślnie dodany.");
+            await studentKeeperInterface.CreateStudentKeeper(newData);
+            manger.NavigateTo("/students", true);
+        }
+    }
+}

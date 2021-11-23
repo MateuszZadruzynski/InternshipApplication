@@ -1,0 +1,137 @@
+﻿@page "/questionnaire"
+
+@using Administration.Interface
+@using Models
+@inject QuestionnaireInterface questionnaireInterface
+@inject IJSRuntime JsRuntime
+
+<div class="filtr">
+    <div class="row">
+        <div class="find">
+            <input class="search" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj..." />
+        </div>
+        <div class="add  ml-auto">
+            <NavLink class="btn btn-secondary" href="/questionnaire/create">
+                <span class="oi oi-plus"></span> Dodaj
+            </NavLink>
+        </div>
+    </div>
+</div>
+@if (questionnaireData != null)
+{
+    @foreach (var data in questionnaireData.Where(x => IsVisible(x)))
+    {
+        <br />
+        <div class="data table-responsive bg-dark">
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Pytanie 1</th>
+                        <th>Pytanie 2</th>
+                        <th>Pytanie 3</th>
+                        <th>Pytanie 4</th>
+                        <th>Pytanie 5</th>
+                        <th>Pytanie 6</th>
+                        <th>Suma Punktów</th>
+                        <th>Opiekun</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            @data.Student.email
+                        </td>
+                        <td>
+                            @data.QuestionOne
+                        </td>
+                        <td>
+                            @data.QuestionTwo
+                        </td>
+                        <td>
+                            @data.QuestionThree
+                        </td>
+                        <td>
+                            @data.QuestionFour
+                        </td>
+                        <td>
+                            @data.QuestionFive
+                        </td>
+                        <td>
+                            @data.QuestionSix
+                        </td>
+                        <td>
+                            @data.Points
+                        </td>
+                        <td>
+                            @data.Keeper.email
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="desc bg-dark">
+                <label class="d-block">Opis praktyki:</label>
+                @data.Opinion
+                <div class="buttons">
+                    <NavLink href="@($"/questionnaire/edit/{data.QuestionnaireiD}")" class="btn btn-success">Edytuj</NavLink>
+                    <NavLink class="btn btn-danger" @onclick="() => DeleteQuestionnaire(data.QuestionnaireiD)">Usuń</NavLink>
+                </div>
+            </div>
+        </div>
+
+    }
+}
+else
+{
+    <NoDataFound></NoDataFound>
+}
+
+
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+
+@code {
+    private IEnumerable<QuestionnaireModelDTO> questionnaireData { get; set; } = new List<QuestionnaireModelDTO>();
+
+    private int? DeleteQuestionnaireId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    public string Filter { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        questionnaireData = await questionnaireInterface.GetAllQuestionnaire();
+    }
+
+    private async Task DeleteQuestionnaire(int QuestionnaireId)
+    {
+        DeleteQuestionnaireId = QuestionnaireId;
+        await JsRuntime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public bool IsVisible(QuestionnaireModelDTO data)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (data.Student.email.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (data.Keeper.email.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteQuestionnaireId != null)
+        {
+            await questionnaireInterface.DeleteQuestionnaire(DeleteQuestionnaireId.Value);
+            questionnaireData = await questionnaireInterface.GetAllQuestionnaire();
+        }
+        await JsRuntime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+}

@@ -1,0 +1,68 @@
+﻿.details {
+    background-color: #ebebeb;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    align-content: center;
+    height: 90%;
+    padding: 30px 30px 30px 30px;
+}
+
+.image {
+    position: relative;
+    overflow: hidden;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    top: -9999px;
+    left: -9999px;
+    right: -9999px;
+    bottom: -9999px;
+    height: 300px;
+    object-fit: cover;
+    width:100%;
+    object-position: 100% 0;
+}
+
+.card {
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 13px 27px -5px, rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
+
+.title {
+    font-size: 2em;
+    font-weight: bold;
+    text-align: left;
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+card-subtitle{
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font: 700;
+}
+
+.oi {
+    color: darkgoldenrod;
+    font-size: large;
+    border-radius: 15px 50px;
+}
+
+title {
+    color: rgba(255, 255, 255, 0.1);
+    font:bold;
+}
+
+.btn {
+    border: 1px solid black;
+    color: whitesmoke;
+    font: bold;
+    background-color: #659DBD
+}
+
+a {
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}

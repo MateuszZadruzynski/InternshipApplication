@@ -1,0 +1,94 @@
+﻿@page "/signup/keeper"
+
+@inject AuthenticationInterface authenticationInterface
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+@inject CompanyInterface companyInterface
+
+
+<div class="div-form">
+    <h2>Rejestracja opkiekuna:</h2>
+
+    <EditForm Model="KeeperSignUp" OnValidSubmit="RegisterKeeper">
+        <DataAnnotationsValidator />
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <InputSelect @bind-Value="KeeperSignUp.degree">
+                        @foreach (var degree in Enum.GetValues(typeof(degree)))
+                        {
+                            <option value="@degree">@degree</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="()=>KeeperSignUp.degree"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Imię" @bind-Value="KeeperSignUp.name" />
+                    <ValidationMessage For="()=>KeeperSignUp.name"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Nazwisko" @bind-Value="KeeperSignUp.lastName" />
+                    <ValidationMessage For="()=>KeeperSignUp.lastName"></ValidationMessage>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <InputSelect @bind-Value="KeeperSignUp.CompanyId">
+                        <option value="">Nie dotyczy</option>
+                        @foreach (var company in companies)
+                        {
+                            <option value="@company.CompanyId">@company.name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="+48123456123" @bind-Value="KeeperSignUp.telephone" />
+                    <ValidationMessage For="()=>KeeperSignUp.telephone"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="E-mail" @bind-Value="KeeperSignUp.email" />
+                    <ValidationMessage For="()=>KeeperSignUp.email"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Hasło" type="password" @bind-Value="KeeperSignUp.Password" />
+                    <ValidationMessage For="()=>KeeperSignUp.Password"></ValidationMessage>
+                </div>
+                <div class="form-group">
+                    <InputText placeholder="Potwierdź hasło" type="password" @bind-Value="KeeperSignUp.ConfirmPassword" />
+                    <ValidationMessage For="()=>KeeperSignUp.ConfirmPassword"></ValidationMessage>
+                </div>
+                <InputText @bind-Value="KeeperSignUp.description" hidden />
+            </div>
+        </div>
+        <label class="buttons">
+            <button type="submit" class="btn-submit btn">Rejestracja</button>
+            <a href="/students" class="btn btn-dark">Wyjdź</a>
+        </label>
+    </EditForm>
+</div>
+
+@code {
+
+    private KeeperDTO KeeperSignUp { get; set; } = new KeeperDTO();
+
+    private IEnumerable<CompanyDTO> companies { get; set; } = new List<CompanyDTO>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await companyInterface.GetCompanies();
+    }
+
+    private async Task RegisterKeeper()
+    {
+        var result = await authenticationInterface.SignUpKeeper(KeeperSignUp);
+
+        if (!result.isSuccessful)
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "Przykro nam, ale coś poszło nie tak.");
+        }
+        else
+        {
+            navigationManager.NavigateTo("/login");
+        }
+    }
+}

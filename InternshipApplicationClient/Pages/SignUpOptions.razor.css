@@ -1,0 +1,57 @@
+﻿html {
+    height: 100%;
+    background-color: #ebebeb;
+}
+
+body {
+    text-align: center;
+    height: 100%;
+    background-color: #ebebeb;
+}
+
+.box {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    padding: 10%;
+}
+
+.student {
+    padding: 5%;
+    margin: auto;
+    background-color: #f2af58;
+    width: 20em;
+    height: 20em;
+    text-align: center;
+    box-shadow: 0 10px 16px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%) !important;
+    cursor: pointer;
+}
+
+    .student:hover {
+        background-color: #f5ba6e;
+    }
+
+.keeper {
+    padding: 5%;
+    margin: auto;
+    background-color: #659DBD;
+    width: 20em;
+    height: 20em;
+    text-align: center;
+    box-shadow: 0 10px 16px 0 rgb(0 0 0 / 20%), 0 6px 20px 0 rgb(0 0 0 / 19%) !important;
+    cursor: pointer;
+}
+
+    .keeper:hover {
+        background-color: #79a4bd;
+    }
+
+a {
+    text-decoration: none;
+    color: black;
+    font: bold;
+}
+
+oi{
+    text-size-adjust:auto;
+}

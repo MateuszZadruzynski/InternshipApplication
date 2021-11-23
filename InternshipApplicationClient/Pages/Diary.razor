@@ -1,0 +1,97 @@
+﻿@page "/diary"
+
+@inject DiaryInterface diaryInterface
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime Runtime
+
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles =Utils.AuthenticationData.StudentRole)]
+
+@if (diaries == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Wczytywanie danych...</span>
+        </div>
+    </div>
+}
+else
+{
+    <div class="div-form pb-5 mt-3 mb-3">
+        <h1>Twoje dzienniczki praktyk</h1>
+        <a class="btn btn-success float-right" href="/diary/create">
+            <span class="oi oi-plus"> Dodaj</span>
+        </a>
+    </div>
+    @foreach (var diary in diaries)
+    {
+        <div class="div-form mt-3 mb-3">
+            <div class="card">
+                <div class="card-header">
+                    <h3>@diary.title</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">@diary.Date.ToString("dd/MM/yyyy")</li>
+                        <li class="list-group-item">@diary.summary</li>
+                        <li class="list-group-item">@diary.description</li>
+                        <li class="list-group-item">@diary.conclustion</li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <a class="btn btn-success float-right m-2" href="@($"/diary/edit/{diary.DiaryId}")">
+                        <span class="oi oi-plus"> Edytuj</span>
+                    </a>
+                    <button class="btn btn-danger float-right m-2" @onclick="() =>DeleteDiary(diary.DiaryId)">
+                        <span class="oi oi-trash"> Usuń</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+}
+<DeleteWindow isParentTrue="Started" ConfirmChaged="ConfirmDelete"></DeleteWindow>
+@code{
+
+    [Parameter]
+    public int? studentId { get; set; }
+
+    public IEnumerable<DiaryDTO> diaries = new List<DiaryDTO>();
+
+    private int? DeleteDiaryId { get; set; } = null;
+
+    private bool Started { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData) != null)
+        {
+            var data = await localStorage.GetItemAsync<StudentDTO>(AuthenticationData.UserData);
+            studentId = data.StudentId;
+        }
+        await LoadDiaries();
+    }
+
+    private async Task LoadDiaries()
+    {
+        diaries = await diaryInterface.GetDiaries(studentId.Value);
+    }
+
+    private async Task DeleteDiary(int DiaryId)
+    {
+        DeleteDiaryId = DiaryId;
+        await Runtime.InvokeVoidAsync("ShowDialog");
+    }
+
+    public async Task ConfirmDelete(bool isTrue)
+    {
+        Started = true;
+        if (isTrue && DeleteDiaryId != null)
+        {
+            await diaryInterface.DeleteDiary(DeleteDiaryId.Value);
+            diaries = await diaryInterface.GetDiaries(studentId.Value);
+        }
+        await Runtime.InvokeVoidAsync("HideDialog");
+        Started = false;
+    }
+}

@@ -1,0 +1,56 @@
+﻿.btn-more {
+    border-radius: 10%;
+    background-color: #1b6ec2;
+    color: white;
+    transition: 0.5s;
+    border: none;
+    margin: 7px;
+}
+
+.buttons {
+    text-align: left;
+    margin-top: 5px;
+    border: none;
+}
+
+.desc {
+    color: white;
+    overflow: auto;
+    padding: 10px;
+}
+
+.filtr {
+    position: relative;
+    border-radius: 6px;
+    padding: 25px;
+    text-align: left;
+    background-color: white;
+    box-sizing: content-box;
+    width: auto;
+    margin: auto;
+}
+
+.find {
+    float: left;
+    padding:5px;
+    margin-right:auto;
+}
+.bg-dark {
+    border-radius: 6px;
+}
+
+.search{
+    min-width:40%;
+}
+.data {
+    background-color: rgba(52,58,64,255);
+    border-radius: 6px;
+    padding: 2px;
+    text-align: left;
+    box-sizing:border-box;
+    width: auto;
+    margin: auto;
+}
+.nav-link {
+    min-width: 200px;
+}

@@ -1,0 +1,71 @@
+﻿<div class="top-row pl-4 navbar navbar-dark">
+    <img cals="logo" src="css/logo.png" />
+</div>
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <ul class="nav flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/companies">
+                <span class="oi oi-list" aria-hidden="true"></span> FIRMY
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/diary">
+                <span class="oi oi-book" aria-hidden="true"></span> DZIENNIKI
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/keepers">
+                <span class="oi oi-heart" aria-hidden="true"></span> OPIEKUNOWIE
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/students">
+                <span class="oi oi-person" aria-hidden="true"></span> STUDENCI
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/questionnaire">
+                <span class="oi oi-tags" aria-hidden="true"></span> OCENY
+            </NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/internship">
+                <span class="oi oi-laptop" aria-hidden="true"></span> OFERTY
+            </NavLink>
+        </li>
+        <div class="bottom">
+            <AuthorizeView>
+                <Authorized>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="Identity/Account/Logout">
+                            <span class="oi oi-account-logout" aria-hidden="true"></span> WYLOGUJ
+                        </NavLink>
+                    </li>
+                </Authorized>
+                <NotAuthorized>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="Identity/Account/Register">
+                            <span class="oi oi-book" aria-hidden="true"></span> REJESTRACJA
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="Identity/Account/Login">
+                            <span class="oi oi-account-login" aria-hidden="true"></span> LOGOWANIE
+                        </NavLink>
+                    </li>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </ul>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

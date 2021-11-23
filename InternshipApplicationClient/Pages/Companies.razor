@@ -1,0 +1,89 @@
+﻿@page "/companies/all"
+@page "/"
+
+@inject CompanyInterface companyInterface
+
+<div class="filtr border-card">
+    <div class="row">
+        <div class="find">
+            <div style="color:black; font-size:25px; float:left">Filtrowanie według słów kluczowych:</div>
+        </div>
+        <div class="add  ml-auto">
+            <input class="search mr-auto" @bind="Filter" @bind:event="oninput" placeholder="Wyszukaj" />
+        </div>
+    </div>
+</div>
+
+@if (companies == null)
+{
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Wczytywanie danych...</span>
+        </div>
+    </div>
+}
+else
+{
+    @foreach (var company in companies.Where(x => IsVisible(x)))
+    {
+        <div class="card card mt-4 border-0" style="background-color: #ebebeb; width:100%">
+            <div class="card border-card p-0" style="width:100%">
+                @if (company.CompanyImages == null)
+                {
+                    <img src="https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260" class="card-img">
+                }
+                else
+                {
+                    <img src="@company.CompanyImages.URL" class="card-img" />
+                }
+                <div class="card-body">
+                    <div class="card-title">
+                        @company.name
+                    </div>
+                    <div class="card-subtitle">
+                        @company.city
+                        <br />
+                        @company.type
+                    </div>
+                    <p class="card-text">
+                        @company.description
+                    </p>
+                    <a href="@($"/company/details/{company.CompanyId}")" class="mt-auto btn">Zobacz oferty</a>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+
+@code{
+    public IEnumerable<CompanyDTO> companies = new List<CompanyDTO>();
+    public string Filter { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadCompanies();
+    }
+
+    public bool IsVisible(CompanyDTO company)
+    {
+        if (string.IsNullOrEmpty(Filter))
+            return true;
+
+        if (company.name.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (company.type.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (company.city.Contains(Filter, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    }
+
+    private async Task LoadCompanies()
+    {
+        companies = await companyInterface.GetCompanies();
+    }
+}

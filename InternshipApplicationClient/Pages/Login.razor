@@ -1,0 +1,50 @@
+﻿@page "/login"
+
+@inject AuthenticationInterface authenticationInterface
+@inject NavigationManager navigationManager
+@inject IJSRuntime Runtime
+
+
+<div class="d-flex justify-content-center mt-6">
+    <div class="row mt-5">
+        <div class="col-sm pb-1 mt-3">
+            <h1>Logowanie</h1>
+            <EditForm Model="authUser" OnValidSubmit="LoginUser">
+                <DataAnnotationsValidator />
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <InputText Id="email" Class="form-control" @bind-Value="authUser.Email" />
+                    <ValidationMessage For="@(() => authUser.Email)" />
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <InputText Id="password" type="password" Class="form-control" @bind-Value="authUser.Password" />
+                    <ValidationMessage For="@(() => authUser.Password)" />
+                </div>
+                <button type="submit" class="btn btn-primary">Zaloguj się</button>
+                <a href="/companies" class="btn btn-dark">Wyjdź</a>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AuthenticationUser authUser { get; set; } = new AuthenticationUser();
+
+    private async Task LoginUser()
+    {
+        var resultStudent = await authenticationInterface.LoginStudent(authUser);
+        var resultKeeper = await authenticationInterface.LoginKeeper(authUser);
+        var resultCompany = await authenticationInterface.LoginCompany(authUser);
+        if (!resultKeeper.isAuthenticationSuccessful && !resultStudent.isAuthenticationSuccessful && !resultCompany.isAuthenticationSuccessful )
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "error", "Przykro nam, ale coś poszło nie tak.");
+        }
+        else
+        {
+            await Runtime.InvokeVoidAsync("ToastShow", "success", "Zalogowano pomyślnie.");
+            navigationManager.NavigateTo("/companies/all", true);
+        }
+    }
+}
+
