@@ -1,18 +1,43 @@
 ﻿@page "/diary/edit/{DiaryId:int}"
+@page "/diary/create"
 
 @using Administration.Interface;
 @using Models
 @inject DiaryInterface DiaryInterface
+@inject StudentInterface StudentInterface 
 @inject NavigationManager Navigation
 @inject IJSRuntime Runtime
 
 <div class="div-form">
-    <h2>Edytuj dziennik:</h2>
+    <h2>@Title dziennik:</h2>
 
     <EditForm Model="DiaryData" OnValidSubmit="EditDiary">
         <DataAnnotationsValidator />
         <div class="row">
             <div class="col">
+                @if (Title == "Utwórz")
+                {
+                    <div class="form-group">
+                        <label class="d-block">Wybierz studenta</label>
+                        <InputSelect @bind-Value="DiaryData.StudentId">
+                            @foreach (var student in students)
+                                {
+                                <option value="@student.StudentId">@student.email</option>
+                                }
+                        </InputSelect>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <InputSelect @bind-Value="DiaryData.StudentId" hidden>
+                            @foreach (var student in students)
+                                {
+                                <option value="@student.StudentId">@student.email</option>
+                                }
+                        </InputSelect>
+                    </div>
+                }
                 <div class="form-group">
                     <label class="d-block">Tytuł:</label>
                     <InputText placeholder="Name" @bind-Value="DiaryData.title" />
@@ -38,7 +63,7 @@
             <InputTextArea placeholder="Here you can describe your company" rows="4" style="min-width:100%" @bind-Value="DiaryData.conclustion" />
         </div>
         <label class="buttons">
-            <button class="btn-submit">Edytuj</button>
+            <button class="btn-submit">@Title</button>
             <NavLink href="/diary" class="btn btn-dark">Wyjdź</NavLink>
         </label>
     </EditForm>
@@ -50,15 +75,16 @@
 
     private DiaryDTO DiaryData { get; set; } = new DiaryDTO();
 
-    private string Title { get; set; } = "Create";
+    private string Title { get; set; } = "Utwórz";
+
+    private IEnumerable<StudentDTO> students { get; set; } = new List<StudentDTO>();
 
     [CascadingParameter]
     public Task<AuthenticationState> Authentication { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-
-        DiaryData = await DiaryInterface.GetDiary(DiaryId.Value);
+        students = await StudentInterface.GetAllStudents();
 
         var state = await Authentication;
         if (!state.User.IsInRole(Utils.AuthenticationData.AdminRole))
@@ -66,13 +92,31 @@
             var uri = new Uri(Navigation.Uri);
             Navigation.NavigateTo($"/identity/account/login?returnUrl={uri.LocalPath}");
         }
+
+        if (DiaryId == null)
+        {
+            DiaryData = new DiaryDTO();
+        }
+        else
+        {
+            Title = "Edytuj";
+            DiaryData = await DiaryInterface.GetDiary(DiaryId.Value);
+        }
     }
     private async Task EditDiary()
     {
         try
         {
-            var updateData = await DiaryInterface.UpdateDiary(DiaryData.DiaryId, DiaryData);
-            await Runtime.InvokeVoidAsync("ToastShow", "success", "Diary updated.");
+            if (DiaryData.DiaryId != 0 && Title == "Edytuj")
+            {
+                var updateData = await DiaryInterface.UpdateDiary(DiaryData.DiaryId, DiaryData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Zaktualizowano pomyślnie.");
+            }
+            else
+            {
+                var createData = await DiaryInterface.CreateDiary(DiaryData);
+                await Runtime.InvokeVoidAsync("ToastShow", "success", "Pomyślnie utworzono dziennik.");
+            }
         }
         catch (Exception error)
         {

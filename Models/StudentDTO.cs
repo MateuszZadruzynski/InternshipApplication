@@ -22,7 +22,7 @@ namespace Models
         [EmailAddress(ErrorMessage = "Błędny adres email.")]
         public string email { get; set; }
 
-        [RegularExpression(@"^(\+[0-9]{9})$", ErrorMessage = "Błędny numer telefonu.")]
+        [RegularExpression(@"^\s*\+?\s*([0-9][\s-]*){9}$", ErrorMessage = "Błędny numer telefonu.")]
         public string telephone { get; set; }
         [Required]
         [RegularExpression(@"^[0-9]{6}$", ErrorMessage = "Indeks musi składać się z 6 znaków.")]

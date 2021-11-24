@@ -22,7 +22,7 @@ namespace DataAcess.Data
         [EmailAddress]
         public string email { get; set; }
 
-        [RegularExpression(@"^(\+[0-9]{9})$")]
+        [RegularExpression(@"^\s*\+?\s*([0-9][\s-]*){9}$")]
         public string telephone { get; set; }
         [Required]
         [RegularExpression(@"[0-9]{6}$")]

@@ -14,7 +14,7 @@
         <div class="row">
             <div class="col">
                 <div class="form-group">
-                    <InputSelect @bind-Value="KeeperSignUp.degree">
+                    <InputSelect id="phd" @bind-Value="KeeperSignUp.degree">
                         @foreach (var degree in Enum.GetValues(typeof(degree)))
                         {
                             <option value="@degree">@degree</option>
@@ -33,7 +33,7 @@
             </div>
             <div class="col">
                 <div class="form-group">
-                    <InputSelect @bind-Value="KeeperSignUp.CompanyId">
+                    <InputSelect id="Company" @bind-Value="KeeperSignUp.CompanyId">
                         <option value="">Nie dotyczy</option>
                         @foreach (var company in companies)
                         {

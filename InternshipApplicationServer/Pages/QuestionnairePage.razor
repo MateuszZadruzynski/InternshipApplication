@@ -4,6 +4,7 @@
 @using Models
 @inject QuestionnaireInterface questionnaireInterface
 @inject IJSRuntime JsRuntime
+@attribute [Authorize(Roles = Utils.AuthenticationData.AdminRole)]
 
 <div class="filtr">
     <div class="row">
